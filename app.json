@@ -621,12 +621,14 @@
       "capabilities": [
         "measure_temperature",
         "measure_temperature.outdoor",
+        "measure_temperature.supply",
         "measure_temperature.exhaust",
         "measure_temperature.extract",
         "target_temperature",
         "measure_humidity",
         "dehumidification_active",
         "free_cooling_active",
+        "deicing_active",
         "measure_power",
         "fan_mode",
         "ventilation_stopped",
@@ -655,6 +657,11 @@
             "en": "Free cooling active"
           }
         },
+        "deicing_active": {
+          "title": {
+            "en": "De-icing active"
+          }
+        },
         "ventilation_stopped": {
           "title": {
             "en": "Ventilation stopped"
@@ -675,6 +682,11 @@
             "en": "Outdoor air temperature"
           }
         },
+        "measure_temperature.supply": {
+          "title": {
+            "en": "Supply air temperature"
+          }
+        },
         "measure_temperature.exhaust": {
           "title": {
             "en": "Exhaust air temperature"
@@ -687,7 +699,7 @@
         },
         "target_temperature": {
           "title": {
-            "en": "Supply air target temperature"
+            "en": "Extract air setpoint"
           },
           "min": 10,
           "max": 30,
@@ -840,10 +852,10 @@
               "id": "target_temperature_home",
               "type": "number",
               "label": {
-                "en": "Target temperature, home"
+                "en": "Extract air setpoint, home"
               },
               "hint": {
-                "en": "Used in Home, High, Fireplace, and Cooker operation."
+                "en": "Used in Home, High, Fireplace, and Cooker operation. With extract air (cascade) control this is the extract air temperature the unit aims for. If the unit uses supply air control, it applies to the supply air instead. See Temperature control below."
               },
               "units": {
                 "en": "degC"
@@ -857,10 +869,10 @@
               "id": "target_temperature_away",
               "type": "number",
               "label": {
-                "en": "Target temperature, away"
+                "en": "Extract air setpoint, away"
               },
               "hint": {
-                "en": "Used in Away operation."
+                "en": "Used in Away operation. With extract air (cascade) control this is the extract air temperature the unit aims for. If the unit uses supply air control, it applies to the supply air instead. See Temperature control below."
               },
               "units": {
                 "en": "degC"
@@ -869,6 +881,17 @@
               "min": 10,
               "max": 30,
               "step": 0.5
+            },
+            {
+              "id": "temperature_control_mode",
+              "type": "label",
+              "label": {
+                "en": "Temperature control"
+              },
+              "hint": {
+                "en": "Whether the setpoints above apply to the extract air (cascade control) or the supply air. Read-only, configured on the unit."
+              },
+              "value": "-"
             }
           ]
         },
@@ -927,6 +950,187 @@
               "min": 0,
               "max": 18000,
               "step": 1
+            },
+            {
+              "id": "free_cooling_dt_start_k",
+              "type": "number",
+              "label": {
+                "en": "Start temperature difference"
+              },
+              "hint": {
+                "en": "Free cooling only starts when the outdoor air is at least this much colder than the extract air."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 1.5,
+              "min": 0,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "free_cooling_dt_stop_k",
+              "type": "number",
+              "label": {
+                "en": "Stop temperature difference"
+              },
+              "hint": {
+                "en": "Free cooling stops when the difference between extract air and outdoor air drops below this. Must be lower than the start difference."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 0.5,
+              "min": 0,
+              "max": 10,
+              "step": 0.5
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "De-icing"
+          },
+          "children": [
+            {
+              "id": "deicing_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "Enable de-icing"
+              },
+              "hint": {
+                "en": "Protects the heat exchanger against ice when it is cold outside."
+              },
+              "value": true
+            },
+            {
+              "id": "deicing_rotor_speed_percent",
+              "type": "number",
+              "label": {
+                "en": "Rotor speed during de-icing"
+              },
+              "hint": {
+                "en": "Heat exchanger rotor speed while de-icing runs."
+              },
+              "units": {
+                "en": "%"
+              },
+              "value": 100,
+              "min": 0,
+              "max": 100,
+              "step": 1
+            },
+            {
+              "id": "deicing_supply_fan_percent",
+              "type": "number",
+              "label": {
+                "en": "Supply fan during de-icing"
+              },
+              "hint": {
+                "en": "Supply fan speed while de-icing runs."
+              },
+              "units": {
+                "en": "%"
+              },
+              "value": 15,
+              "min": 0,
+              "max": 100,
+              "step": 1
+            },
+            {
+              "id": "deicing_exhaust_fan_percent",
+              "type": "number",
+              "label": {
+                "en": "Exhaust fan during de-icing"
+              },
+              "hint": {
+                "en": "Exhaust fan speed while de-icing runs."
+              },
+              "units": {
+                "en": "%"
+              },
+              "value": 75,
+              "min": 0,
+              "max": 100,
+              "step": 1
+            },
+            {
+              "id": "deicing_rotor_start_temperature",
+              "type": "label",
+              "label": {
+                "en": "Rotor reduction below exhaust air temperature"
+              },
+              "hint": {
+                "en": "The rotor is slowed down when the exhaust air is colder than this. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_fan_start_temperature",
+              "type": "label",
+              "label": {
+                "en": "Fan reduction below exhaust air temperature"
+              },
+              "hint": {
+                "en": "The fans are adjusted when the exhaust air is colder than this. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_active_time",
+              "type": "label",
+              "label": {
+                "en": "De-icing duration"
+              },
+              "hint": {
+                "en": "How long each de-icing cycle runs. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_max_off_time",
+              "type": "label",
+              "label": {
+                "en": "Longest pause between cycles"
+              },
+              "hint": {
+                "en": "Pause between de-icing cycles at milder outdoor temperatures. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_off_time_ramp_start_temperature",
+              "type": "label",
+              "label": {
+                "en": "Pause starts shortening at outdoor temperature"
+              },
+              "hint": {
+                "en": "Below this outdoor temperature the pause between cycles gets shorter. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_min_off_time",
+              "type": "label",
+              "label": {
+                "en": "Shortest pause between cycles"
+              },
+              "hint": {
+                "en": "Pause between de-icing cycles at the coldest outdoor temperatures. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_off_time_ramp_end_temperature",
+              "type": "label",
+              "label": {
+                "en": "Shortest pause from outdoor temperature"
+              },
+              "hint": {
+                "en": "At and below this outdoor temperature the shortest pause is used. Read-only, configured on the unit."
+              },
+              "value": "-"
             }
           ]
         },
@@ -1222,12 +1426,14 @@
       "capabilities": [
         "measure_temperature",
         "measure_temperature.outdoor",
+        "measure_temperature.supply",
         "measure_temperature.exhaust",
         "measure_temperature.extract",
         "target_temperature",
         "measure_humidity",
         "dehumidification_active",
         "free_cooling_active",
+        "deicing_active",
         "measure_power",
         "fan_mode",
         "ventilation_stopped",
@@ -1256,6 +1462,11 @@
             "en": "Free cooling active"
           }
         },
+        "deicing_active": {
+          "title": {
+            "en": "De-icing active"
+          }
+        },
         "ventilation_stopped": {
           "title": {
             "en": "Ventilation stopped"
@@ -1276,6 +1487,11 @@
             "en": "Outdoor air temperature"
           }
         },
+        "measure_temperature.supply": {
+          "title": {
+            "en": "Supply air temperature"
+          }
+        },
         "measure_temperature.exhaust": {
           "title": {
             "en": "Exhaust air temperature"
@@ -1288,7 +1504,7 @@
         },
         "target_temperature": {
           "title": {
-            "en": "Supply air target temperature"
+            "en": "Extract air setpoint"
           },
           "min": 10,
           "max": 30,
@@ -1485,10 +1701,10 @@
               "id": "target_temperature_home",
               "type": "number",
               "label": {
-                "en": "Target temperature, home"
+                "en": "Extract air setpoint, home"
               },
               "hint": {
-                "en": "Used in Home, High, Fireplace, and Cooker operation."
+                "en": "Used in Home, High, Fireplace, and Cooker operation. With extract air (cascade) control this is the extract air temperature the unit aims for. If the unit uses supply air control, it applies to the supply air instead. See Temperature control below."
               },
               "units": {
                 "en": "degC"
@@ -1502,10 +1718,10 @@
               "id": "target_temperature_away",
               "type": "number",
               "label": {
-                "en": "Target temperature, away"
+                "en": "Extract air setpoint, away"
               },
               "hint": {
-                "en": "Used in Away operation."
+                "en": "Used in Away operation. With extract air (cascade) control this is the extract air temperature the unit aims for. If the unit uses supply air control, it applies to the supply air instead. See Temperature control below."
               },
               "units": {
                 "en": "degC"
@@ -1514,6 +1730,17 @@
               "min": 10,
               "max": 30,
               "step": 0.5
+            },
+            {
+              "id": "temperature_control_mode",
+              "type": "label",
+              "label": {
+                "en": "Temperature control"
+              },
+              "hint": {
+                "en": "Whether the setpoints above apply to the extract air (cascade control) or the supply air. Read-only, configured on the unit."
+              },
+              "value": "-"
             }
           ]
         },
@@ -1572,6 +1799,187 @@
               "min": 0,
               "max": 18000,
               "step": 1
+            },
+            {
+              "id": "free_cooling_dt_start_k",
+              "type": "number",
+              "label": {
+                "en": "Start temperature difference"
+              },
+              "hint": {
+                "en": "Free cooling only starts when the outdoor air is at least this much colder than the extract air."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 1.5,
+              "min": 0,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "free_cooling_dt_stop_k",
+              "type": "number",
+              "label": {
+                "en": "Stop temperature difference"
+              },
+              "hint": {
+                "en": "Free cooling stops when the difference between extract air and outdoor air drops below this. Must be lower than the start difference."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 0.5,
+              "min": 0,
+              "max": 10,
+              "step": 0.5
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "De-icing"
+          },
+          "children": [
+            {
+              "id": "deicing_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "Enable de-icing"
+              },
+              "hint": {
+                "en": "Protects the heat exchanger against ice when it is cold outside."
+              },
+              "value": true
+            },
+            {
+              "id": "deicing_rotor_speed_percent",
+              "type": "number",
+              "label": {
+                "en": "Rotor speed during de-icing"
+              },
+              "hint": {
+                "en": "Heat exchanger rotor speed while de-icing runs."
+              },
+              "units": {
+                "en": "%"
+              },
+              "value": 100,
+              "min": 0,
+              "max": 100,
+              "step": 1
+            },
+            {
+              "id": "deicing_supply_fan_percent",
+              "type": "number",
+              "label": {
+                "en": "Supply fan during de-icing"
+              },
+              "hint": {
+                "en": "Supply fan speed while de-icing runs."
+              },
+              "units": {
+                "en": "%"
+              },
+              "value": 15,
+              "min": 0,
+              "max": 100,
+              "step": 1
+            },
+            {
+              "id": "deicing_exhaust_fan_percent",
+              "type": "number",
+              "label": {
+                "en": "Exhaust fan during de-icing"
+              },
+              "hint": {
+                "en": "Exhaust fan speed while de-icing runs."
+              },
+              "units": {
+                "en": "%"
+              },
+              "value": 75,
+              "min": 0,
+              "max": 100,
+              "step": 1
+            },
+            {
+              "id": "deicing_rotor_start_temperature",
+              "type": "label",
+              "label": {
+                "en": "Rotor reduction below exhaust air temperature"
+              },
+              "hint": {
+                "en": "The rotor is slowed down when the exhaust air is colder than this. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_fan_start_temperature",
+              "type": "label",
+              "label": {
+                "en": "Fan reduction below exhaust air temperature"
+              },
+              "hint": {
+                "en": "The fans are adjusted when the exhaust air is colder than this. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_active_time",
+              "type": "label",
+              "label": {
+                "en": "De-icing duration"
+              },
+              "hint": {
+                "en": "How long each de-icing cycle runs. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_max_off_time",
+              "type": "label",
+              "label": {
+                "en": "Longest pause between cycles"
+              },
+              "hint": {
+                "en": "Pause between de-icing cycles at milder outdoor temperatures. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_off_time_ramp_start_temperature",
+              "type": "label",
+              "label": {
+                "en": "Pause starts shortening at outdoor temperature"
+              },
+              "hint": {
+                "en": "Below this outdoor temperature the pause between cycles gets shorter. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_min_off_time",
+              "type": "label",
+              "label": {
+                "en": "Shortest pause between cycles"
+              },
+              "hint": {
+                "en": "Pause between de-icing cycles at the coldest outdoor temperatures. Read-only, configured on the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "deicing_off_time_ramp_end_temperature",
+              "type": "label",
+              "label": {
+                "en": "Shortest pause from outdoor temperature"
+              },
+              "hint": {
+                "en": "At and below this outdoor temperature the shortest pause is used. Read-only, configured on the unit."
+              },
+              "value": "-"
             }
           ]
         },
@@ -1865,6 +2273,22 @@
       },
       "insightsTitleFalse": {
         "en": "Dehumidification stopped"
+      }
+    },
+    "deicing_active": {
+      "type": "boolean",
+      "title": {
+        "en": "De-icing active"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "De-icing started"
+      },
+      "insightsTitleFalse": {
+        "en": "De-icing stopped"
       }
     },
     "free_cooling_active": {
