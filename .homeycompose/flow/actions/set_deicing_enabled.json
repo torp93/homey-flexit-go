@@ -1,0 +1,39 @@
+{
+  "title": {
+    "en": "Turn de-icing on or off"
+  },
+  "titleFormatted": {
+    "en": "Turn de-icing [[state]]"
+  },
+  "hint": {
+    "en": "Enables or disables de-icing of the heat exchanger on the unit."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    },
+    {
+      "name": "state",
+      "type": "dropdown",
+      "title": {
+        "en": "State"
+      },
+      "values": [
+        {
+          "id": "on",
+          "label": {
+            "en": "on"
+          }
+        },
+        {
+          "id": "off",
+          "label": {
+            "en": "off"
+          }
+        }
+      ]
+    }
+  ]
+}

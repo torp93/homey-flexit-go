@@ -18,6 +18,12 @@ type AppDependencies = {
 
 const WIDGET_DRIVER_IDS = ['nordic', 'nordic-cloud'] as const;
 
+function resolveSetpointMode(mode: unknown): 'home' | 'away' {
+  const normalized = String(mode ?? '').trim();
+  if (normalized !== 'home' && normalized !== 'away') throw new Error('Mode must be home or away.');
+  return normalized;
+}
+
 type WidgetDevice = {
   id?: unknown;
   driver?: { id?: unknown };
@@ -80,6 +86,9 @@ export function createFlexitAppClass({
       this.registerDehumidificationConditionCard();
       this.registerFreeCoolingConditionCard();
       this.registerVentilationStoppedConditionCard();
+      this.registerUnitEventFlowTriggers();
+      this.registerUnitConditionCards();
+      this.registerUnitActionCards();
     }
 
     private registerGlobalErrorHandlers() {
@@ -498,6 +507,112 @@ export function createFlexitAppClass({
         const unitId = this.resolveUnitId(args?.device);
         return registry.getVentilationStopped(unitId);
       });
+    }
+
+    private registerUnitEventFlowTriggers() {
+      const cardIdsByEvent: Record<string, string[]> = {
+        alarm_raised: ['alarm_raised'],
+        alarm_cleared: ['alarm_cleared'],
+        deicing_started: ['deicing_started'],
+        deicing_stopped: ['deicing_stopped'],
+        heating_coil_started_heating: ['heating_coil_started_heating'],
+        heating_coil_stopped_heating: ['heating_coil_stopped_heating'],
+        unit_restarted: ['unit_restarted'],
+        heat_recovery_efficiency_changed: ['heat_recovery_efficiency_changed'],
+        heat_exchanger_speed_changed: ['heat_exchanger_speed_changed'],
+        heating_coil_output_changed: ['heating_coil_output_changed'],
+        filter_life_changed: ['filter_life_changed', 'filter_life_dropped_below'],
+      };
+      const cards = new Map<string, any>();
+      for (const cardId of Object.values(cardIdsByEvent).flat()) {
+        cards.set(cardId, this.homey.flow.getDeviceTriggerCard(cardId));
+      }
+      // Fires once, on the poll where the remaining filter life crosses the chosen level.
+      cards.get('filter_life_dropped_below').registerRunListener(async (args: any, state: any) => {
+        const level = Number(args?.percent);
+        return Number(state?.previous) >= level && Number(state?.current) < level;
+      });
+      registry.setUnitEventHandler((event: any) => {
+        runWithLogContext({ unitId: this.resolveUnitId(event.device), unitEvent: event.type }, () => {
+          for (const cardId of cardIdsByEvent[event.type] ?? []) {
+            cards.get(cardId).trigger(event.device, event.tokens ?? {}, event.state ?? {}).catch((error: unknown) => {
+              this.getLogger().error('app.flow.trigger.unit_event.failed', 'Failed to trigger unit event flow', error, {
+                cardId,
+              });
+            });
+          }
+        });
+      });
+    }
+
+    private registerUnitConditionCards() {
+      const flagConditions: Array<[string, string]> = [
+        ['unit_alarm_is_active', 'alarm_active'],
+        ['deicing_is_active', 'deicing_active'],
+        ['heating_coil_is_heating', 'heating'],
+      ];
+      for (const [cardId, reading] of flagConditions) {
+        this.homey.flow.getConditionCard(cardId).registerRunListener(async (args: any) => (
+          Boolean(await registry.getUnitReading(this.resolveUnitId(args?.device), reading))
+        ));
+      }
+      const levelConditions: Array<[string, string]> = [
+        ['filter_life_is_below', 'filter_life'],
+        ['heat_recovery_efficiency_is_below', 'heat_recovery_efficiency'],
+      ];
+      for (const [cardId, reading] of levelConditions) {
+        this.homey.flow.getConditionCard(cardId).registerRunListener(async (args: any) => {
+          const value = Number(await registry.getUnitReading(this.resolveUnitId(args?.device), reading));
+          return value < Number(args?.percent);
+        });
+      }
+    }
+
+    private registerUnitActionCard(cardId: string, run: (args: any, unitId: string) => Promise<unknown>) {
+      this.homey.flow.getActionCard(cardId).registerRunListener(async (args: any) => {
+        await run(args, this.resolveUnitId(args?.device));
+        return true;
+      });
+    }
+
+    private registerUnitActionCards() {
+      this.registerUnitActionCard('set_supply_air_setpoint_mode', async (args, unitId) => (
+        registry.setTemperatureSetpoint(unitId, resolveSetpointMode(args?.mode), Number(args?.temperature))
+      ));
+      this.registerUnitActionCard('set_heating_neutral_zone', async (args, unitId) => registry.setUnitNumericSetting(
+        unitId,
+        `heating_neutral_zone_${resolveSetpointMode(args?.mode)}_k`,
+        Number(args?.kelvin),
+      ));
+      this.registerUnitActionCard('set_outdoor_compensation', async (args, unitId) => (
+        registry.setUnitNumericSetting(unitId, String(args?.setting ?? ''), Number(args?.value))
+      ));
+      this.registerUnitActionCard('set_free_cooling_dt', (args, unitId) => this.setFreeCoolingDt(args, unitId));
+      this.registerUnitActionCard('set_deicing_enabled', async (args, unitId) => (
+        registry.setDeicingEnabled(unitId, String(args?.state) === 'on')
+      ));
+      this.registerUnitActionCard('reset_filter_timer', async (_args, unitId) => registry.resetFilterTimer(unitId));
+      this.registerUnitActionCard('set_filter_change_interval', async (args, unitId) => (
+        registry.setFilterChangeIntervalMonths(unitId, Number(args?.months))
+      ));
+    }
+
+    /** Rejects a value that would leave the stop difference at or above the start difference. */
+    private async setFreeCoolingDt(args: any, unitId: string) {
+      const threshold = String(args?.threshold ?? '');
+      if (threshold !== 'start' && threshold !== 'stop') throw new Error('Threshold must be start or stop.');
+      const value = Number(args?.kelvin);
+      const other = Number(args?.device?.getSetting?.(
+        threshold === 'start' ? 'free_cooling_dt_stop_k' : 'free_cooling_dt_start_k',
+      ));
+      const inverted = threshold === 'start' ? value <= other : value >= other;
+      if (Number.isFinite(other) && inverted) {
+        throw new Error(
+          'The free cooling stop temperature difference must be lower than the start temperature difference.',
+        );
+      }
+      if (threshold === 'start') return registry.setFreeCoolingDtStart(unitId, value);
+      return registry.setFreeCoolingDtStop(unitId, value);
     }
   };
 }

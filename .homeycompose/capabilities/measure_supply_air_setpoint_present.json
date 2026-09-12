@@ -1,0 +1,14 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Current supply air target"
+  },
+  "units": {
+    "en": "°C"
+  },
+  "decimals": 1,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": true
+}

@@ -1,0 +1,14 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Time since unit start"
+  },
+  "units": {
+    "en": "min"
+  },
+  "decimals": 0,
+  "getable": true,
+  "setable": false,
+  "uiComponent": null,
+  "insights": true
+}

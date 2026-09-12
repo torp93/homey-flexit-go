@@ -1,0 +1,27 @@
+{
+  "title": {
+    "en": "Heat exchanger speed changed"
+  },
+  "titleFormatted": {
+    "en": "Heat exchanger speed changed"
+  },
+  "hint": {
+    "en": "Triggers when the rotary heat exchanger speed changes by at least 1 %."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "speed",
+      "type": "number",
+      "title": {
+        "en": "Speed"
+      }
+    }
+  ]
+}

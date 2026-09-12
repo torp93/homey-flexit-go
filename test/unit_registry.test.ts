@@ -1709,7 +1709,7 @@ describe('UnitRegistry', () => {
 
     const filterLifeCalls = mockDevice.setCapabilityValue
       .getCalls()
-      .filter((call: any) => call.args[0] === 'measure_hepa_filter');
+      .filter((call: any) => call.args[0] === 'measure_filter_life_percent');
 
     expect(filterLifeCalls.length).to.be.greaterThan(0);
     const lastCall = filterLifeCalls[filterLifeCalls.length - 1];
@@ -1943,6 +1943,259 @@ describe('UnitRegistry', () => {
     expect(exhaustWrite[4].priority).to.equal(13);
     expect(mockDevice.settings.deicing_enabled).to.equal(false);
     expect(mockDevice.settings.deicing_exhaust_fan_percent).to.equal(60);
+  });
+
+  it('publishes heat recovery, heating coil, supply air target and uptime readings', () => {
+    const mockDevice = makeMockDevice();
+    registry.register('test_unit', mockDevice);
+
+    const unit = { unitId: 'test_unit', devices: new Set([mockDevice]) };
+    (registry as any).distributeData(unit, {
+      heat_recovery_efficiency: 60.27,
+      heat_exchanger_percent: 23.1,
+      heating_coil_output_percent: 0,
+      heating_coil_demand_percent: 34.09,
+      supply_air_setpoint_present: 19.5,
+      uptime_minutes: 153,
+      runtime_electric_heater_hours: 9924,
+    });
+
+    const expected: Array<[string, number]> = [
+      ['measure_heat_recovery_efficiency', 60.27],
+      ['measure_heat_exchanger_percent', 23.1],
+      ['measure_heating_coil_output_percent', 0],
+      ['measure_heating_coil_demand_percent', 34.09],
+      ['measure_supply_air_setpoint_present', 19.5],
+      ['measure_unit_uptime', 153],
+      ['measure_heating_coil_hours', 9924],
+    ];
+    for (const [capability, value] of expected) {
+      expect(mockDevice.setCapabilityValue.calledWith(capability, value), capability).to.equal(true);
+    }
+    expect(mockDevice.setCapabilityValue.calledWith('measure_humidity', sinon.match.any)).to.equal(false);
+  });
+
+  it('mirrors boolean states as 0/1 capabilities for Insights', () => {
+    const mockDevice = makeMockDevice();
+    registry.register('test_unit', mockDevice);
+
+    const unit = { unitId: 'test_unit', devices: new Set([mockDevice]) };
+    (registry as any).distributeData(unit, {
+      free_cooling_actual_mode: 10,
+      dehumidification_fan_control: 0,
+      dehumidification_request_by_slope: 0,
+      deicing_rotor_active: 1,
+      ventilation_mode: 3,
+      alarm_522: 0,
+    });
+
+    const expected: Array<[string, number | boolean]> = [
+      ['free_cooling_active', true],
+      ['measure_free_cooling_active', 1],
+      ['dehumidification_active', false],
+      ['measure_dehumidification_active', 0],
+      ['deicing_active', true],
+      ['measure_deicing_active', 1],
+      ['ventilation_stopped', false],
+      ['measure_ventilation_stopped', 0],
+      ['unit_alarm_active', false],
+      ['measure_unit_alarm_active', 0],
+    ];
+    for (const [capability, value] of expected) {
+      expect(mockDevice.setCapabilityValue.calledWith(capability, value), capability).to.equal(true);
+    }
+  });
+
+  it('publishes active alarms as a capability and a readable label', () => {
+    const mockDevice = makeMockDevice();
+    registry.register('test_unit', mockDevice);
+
+    const unit = { unitId: 'test_unit', devices: new Set([mockDevice]) };
+    (registry as any).distributeData(unit, { alarm_522: 1, alarm_505: 0, alarm_642: 1 });
+
+    expect(mockDevice.setCapabilityValue.calledWith('unit_alarm_active', true)).to.equal(true);
+    expect(mockDevice.setCapabilityValue.calledWith('measure_unit_alarm_active', 1)).to.equal(true);
+    expect(mockDevice.settings.active_alarms).to.equal('Air filter polluted (1020); Device warm restart');
+
+    (registry as any).distributeData(unit, { alarm_522: 0, alarm_642: 0 });
+    expect(mockDevice.settings.active_alarms).to.equal('None');
+  });
+
+  it('emits unit events for alarms, de-icing, heating, restarts and value changes after the first reading', () => {
+    const mockDevice = makeMockDevice();
+    const events: any[] = [];
+    registry.setUnitEventHandler((event: any) => events.push(event));
+    registry.register('test_unit', mockDevice);
+
+    const unit = { unitId: 'test_unit', devices: new Set([mockDevice]) };
+    (registry as any).distributeData(unit, {
+      alarm_522: 0,
+      deicing_rotor_active: 0,
+      heating_coil_output_percent: 0,
+      uptime_minutes: 200,
+      heat_recovery_efficiency: 60.2,
+      filter_time: 1000,
+      filter_limit: 4380,
+    });
+    expect(events).to.deep.equal([]);
+
+    (registry as any).distributeData(unit, {
+      alarm_522: 1,
+      deicing_rotor_active: 1,
+      heating_coil_output_percent: 12,
+      uptime_minutes: 3,
+      heat_recovery_efficiency: 58.9,
+      filter_time: 1100,
+      filter_limit: 4380,
+    });
+    expect(events.map((event) => event.type)).to.have.members([
+      'alarm_raised',
+      'deicing_started',
+      'heating_coil_started_heating',
+      'unit_restarted',
+      'heat_recovery_efficiency_changed',
+      'heating_coil_output_changed',
+      'filter_life_changed',
+    ]);
+    expect(events.find((event) => event.type === 'alarm_raised').tokens)
+      .to.deep.equal({ alarm: 'Air filter polluted', code: '1020' });
+    expect(events.find((event) => event.type === 'filter_life_changed').state)
+      .to.deep.equal({ previous: 77, current: 75 });
+    expect(events.every((event) => event.device === mockDevice)).to.equal(true);
+
+    events.length = 0;
+    (registry as any).distributeData(unit, {
+      alarm_522: 0,
+      deicing_rotor_active: 0,
+      heating_coil_output_percent: 0,
+    });
+    expect(events.map((event) => event.type)).to.have.members([
+      'alarm_cleared',
+      'deicing_stopped',
+      'heating_coil_stopped_heating',
+      'heating_coil_output_changed',
+    ]);
+  });
+
+  it('answers flow condition readings only after they have been read from the unit', async () => {
+    const mockDevice = makeMockDevice();
+    registry.register('test_unit', mockDevice);
+    const unit = (registry as any).units.get('test_unit');
+
+    let error: Error | undefined;
+    try {
+      await registry.getUnitReading('test_unit', 'heat_recovery_efficiency');
+    } catch (caught) {
+      error = caught as Error;
+    }
+    expect(error?.message).to.equal('This value has not been read from the unit yet.');
+
+    (registry as any).distributeData(unit, {
+      heat_recovery_efficiency: 61.4,
+      alarm_522: 1,
+      filter_time: 0,
+      filter_limit: 4380,
+    });
+    expect(await registry.getUnitReading('test_unit', 'heat_recovery_efficiency')).to.equal(61);
+    expect(await registry.getUnitReading('test_unit', 'alarm_active')).to.equal(true);
+    expect(await registry.getUnitReading('test_unit', 'filter_life')).to.equal(100);
+  });
+
+  it('splits polling into a fast request and slow requests of at most 35 objects', () => {
+    const mockDevice = makeMockDevice();
+    const requests: any[][] = [];
+    mockClient.readPropertyMultiple.resetBehavior();
+    mockClient.readPropertyMultiple.callsFake((_ip: string, request: any[], cb: any) => {
+      requests.push(request);
+      cb(null, { values: [] });
+    });
+
+    registry.register('test_unit', mockDevice);
+
+    const ids = (request: any[]) => request.map((entry) => `${entry.objectId.type}:${entry.objectId.instance}`);
+    const [fast, ...slow] = requests.map(ids);
+    expect(slow.length).to.be.greaterThan(0);
+    expect(fast).to.include.members(['2:2023', '1:0', '1:29', '2:196', '2:132', '2:2361', '2:1936']);
+    expect(fast).to.not.include('0:96');
+    expect(fast).to.not.include('2:1847');
+    expect(slow.flat()).to.include.members(['2:1847', '2:1879', '2:107', '2:1921', '5:522', '2:1794', '2:2091']);
+    for (const request of slow) expect(request.length).to.be.at.most(35);
+
+    const requestsAfterStart = requests.length;
+    (registry as any).pollUnit('test_unit');
+    expect(requests.length).to.equal(requestsAfterStart + 1);
+  });
+
+  it('merges cached slow poll values into later polls and keeps verified writes', async () => {
+    const mockDevice = makeMockDevice();
+    mockClient.readPropertyMultiple.resetBehavior();
+    mockClient.readPropertyMultiple.callsFake((_ip: string, request: any[], cb: any) => {
+      const objects = request.map((entry) => `${entry.objectId.type}:${entry.objectId.instance}`);
+      if (objects.includes('2:1847')) {
+        cb(null, { values: [makeReadObject(2, 1847, 29232), makeReadObject(2, 107, 2)] });
+        return;
+      }
+      if (objects.length === 1 && objects[0] === '2:107') {
+        cb(null, { values: [makeReadObject(2, 107, 1.5)] });
+        return;
+      }
+      cb(null, { values: [] });
+    });
+
+    registry.register('test_unit', mockDevice);
+    // The first poll runs before the device is attached; the next poll distributes the cached slow values.
+    (registry as any).pollUnit('test_unit');
+    expect(mockDevice.settings.runtime_total_hours).to.equal('29232 h');
+    expect(mockDevice.settings.winter_compensation_k).to.equal(2);
+
+    await registry.setUnitNumericSetting('test_unit', 'winter_compensation_k', 1.5);
+    (registry as any).pollUnit('test_unit');
+
+    const write = mockClient.writeProperty.getCalls()
+      .map((call: any) => call.args)
+      .find((args: any) => args[1]?.instance === 107);
+    expect(write[3][0]).to.deep.equal({ type: BACNET_ENUMS.ApplicationTags.REAL, value: 1.5 });
+    expect(write[4].priority).to.equal(13);
+    expect(mockDevice.settings.winter_compensation_k).to.equal(1.5);
+  });
+
+  it('rejects unknown unit settings and out-of-range unit setting values', async () => {
+    const mockDevice = makeMockDevice();
+    registry.register('test_unit', mockDevice);
+
+    const failures = await Promise.allSettled([
+      registry.setUnitNumericSetting('test_unit', 'not_a_setting', 1),
+      registry.setUnitNumericSetting('test_unit', 'summer_compensation_end_c', 41),
+      registry.setFilterChangeIntervalMonths('test_unit', 13),
+    ]);
+    const messages = failures.map((failure) => (failure as PromiseRejectedResult).reason?.message);
+
+    expect(messages[0]).to.equal('Unknown unit setting: not_a_setting');
+    expect(messages[1]).to.equal('Summer compensation end temperature must be between 0 and 40 degC');
+    expect(messages[2]).to.equal('Filter change interval must be between 3 and 12 months');
+    expect(mockClient.writeProperty.called).to.equal(false);
+  });
+
+  it('syncs supplementary heating and outdoor compensation settings from polled data', () => {
+    const mockDevice = makeMockDevice();
+    registry.register('test_unit', mockDevice);
+
+    const unit = { unitId: 'test_unit', devices: new Set([mockDevice]) };
+    (registry as any).distributeData(unit, {
+      heating_coil_enabled: 1,
+      heating_neutral_zone_home_k: 2.5,
+      winter_compensation_end_c: -15,
+      summer_compensation_k: -3.04,
+      summer_compensation_end_c: 99,
+    });
+
+    expect(mockDevice.settings).to.include({
+      heating_coil_enabled: true,
+      heating_neutral_zone_home_k: 2.5,
+      winter_compensation_end_c: -15,
+      summer_compensation_k: -3,
+    });
+    expect(mockDevice.settings.summer_compensation_end_c).to.equal(undefined);
   });
 
   it('falls back to slope request when dehumidification fan control is unavailable', () => {

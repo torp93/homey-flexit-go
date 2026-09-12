@@ -1,0 +1,49 @@
+{
+  "title": {
+    "en": "Set heating coil neutral zone"
+  },
+  "titleFormatted": {
+    "en": "Set [[mode]] heating coil neutral zone to [[kelvin]] K"
+  },
+  "hint": {
+    "en": "The electric heating coil only heats when the supply air is this far below the supply air setpoint."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    },
+    {
+      "name": "mode",
+      "type": "dropdown",
+      "title": {
+        "en": "Mode"
+      },
+      "values": [
+        {
+          "id": "home",
+          "label": {
+            "en": "Home"
+          }
+        },
+        {
+          "id": "away",
+          "label": {
+            "en": "Away"
+          }
+        }
+      ]
+    },
+    {
+      "name": "kelvin",
+      "type": "number",
+      "title": {
+        "en": "Neutral zone"
+      },
+      "min": 0,
+      "max": 10,
+      "step": 0.5
+    }
+  ]
+}

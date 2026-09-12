@@ -15,6 +15,12 @@
     "measure_temperature.extract",
     "target_temperature",
     "measure_temperature.supply",
+    "measure_supply_air_setpoint_present",
+    "measure_heat_recovery_efficiency",
+    "measure_heat_exchanger_percent",
+    "measure_heating_coil_output_percent",
+    "measure_heating_coil_demand_percent",
+    "unit_alarm_active",
     "dehumidification_active",
     "free_cooling_active",
     "measure_power",
@@ -25,18 +31,19 @@
     "measure_fan_speed_percent.extract",
     "measure_fan_setpoint_percent",
     "measure_fan_setpoint_percent.extract",
-    "measure_hepa_filter",
+    "measure_filter_life_percent",
     "button.reset_filter",
     "ventilation_stopped",
-    "measure_humidity",
-    "deicing_active"
+    "deicing_active",
+    "measure_free_cooling_active",
+    "measure_dehumidification_active",
+    "measure_ventilation_stopped",
+    "measure_deicing_active",
+    "measure_unit_alarm_active",
+    "measure_heating_coil_hours",
+    "measure_unit_uptime"
   ],
   "capabilitiesOptions": {
-    "measure_humidity": {
-      "title": {
-        "en": "Extract air humidity"
-      }
-    },
     "dehumidification_active": {
       "title": {
         "en": "Dehumidification active"
@@ -64,7 +71,7 @@
     },
     "measure_temperature": {
       "title": {
-        "en": "Supply air temperature"
+        "en": "Supply air temperature (thermostat)"
       }
     },
     "measure_temperature.outdoor": {
@@ -136,15 +143,6 @@
       "units": {
         "en": "%"
       }
-    },
-    "measure_hepa_filter": {
-      "title": {
-        "en": "Filter Life Remaining"
-      },
-      "units": {
-        "en": "%"
-      },
-      "insights": true
     },
     "button.reset_filter": {
       "maintenanceAction": true,
@@ -314,6 +312,169 @@
           "value": 18,
           "min": 10,
           "max": 30,
+          "step": 0.5
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Supplementary heating"
+      },
+      "children": [
+        {
+          "id": "heating_coil_enabled",
+          "type": "checkbox",
+          "label": {
+            "en": "Electric heating coil"
+          },
+          "hint": {
+            "en": "Allows the electric heating coil to heat the supply air when heat recovery alone is not enough."
+          },
+          "value": true
+        },
+        {
+          "id": "heating_neutral_zone_home_k",
+          "type": "number",
+          "label": {
+            "en": "Heating coil neutral zone, home"
+          },
+          "hint": {
+            "en": "The heating coil only heats when the supply air is this far below the home supply air setpoint."
+          },
+          "units": {
+            "en": "K"
+          },
+          "value": 2.5,
+          "min": 0,
+          "max": 10,
+          "step": 0.5
+        },
+        {
+          "id": "heating_neutral_zone_away_k",
+          "type": "number",
+          "label": {
+            "en": "Heating coil neutral zone, away"
+          },
+          "hint": {
+            "en": "The heating coil only heats when the supply air is this far below the away supply air setpoint."
+          },
+          "units": {
+            "en": "K"
+          },
+          "value": 2.5,
+          "min": 0,
+          "max": 10,
+          "step": 0.5
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Outdoor temperature compensation"
+      },
+      "children": [
+        {
+          "id": "winter_compensation_k",
+          "type": "number",
+          "label": {
+            "en": "Winter compensation"
+          },
+          "hint": {
+            "en": "How much the supply air setpoint is raised in cold weather. It ramps in from the winter start temperature and applies in full at the winter end temperature."
+          },
+          "units": {
+            "en": "K"
+          },
+          "value": 2,
+          "min": -10,
+          "max": 10,
+          "step": 0.5
+        },
+        {
+          "id": "winter_compensation_start_c",
+          "type": "number",
+          "label": {
+            "en": "Winter start temperature"
+          },
+          "hint": {
+            "en": "Outdoor temperature where winter compensation starts."
+          },
+          "units": {
+            "en": "degC"
+          },
+          "value": -5,
+          "min": -40,
+          "max": 10,
+          "step": 0.5
+        },
+        {
+          "id": "winter_compensation_end_c",
+          "type": "number",
+          "label": {
+            "en": "Winter end temperature"
+          },
+          "hint": {
+            "en": "Outdoor temperature where winter compensation applies in full. Must be below the start temperature."
+          },
+          "units": {
+            "en": "degC"
+          },
+          "value": -15,
+          "min": -40,
+          "max": 10,
+          "step": 0.5
+        },
+        {
+          "id": "summer_compensation_k",
+          "type": "number",
+          "label": {
+            "en": "Summer compensation"
+          },
+          "hint": {
+            "en": "How much the supply air setpoint is shifted in warm weather; a negative value lowers it. It ramps in from the summer start temperature and applies in full at the summer end temperature."
+          },
+          "units": {
+            "en": "K"
+          },
+          "value": -3,
+          "min": -10,
+          "max": 10,
+          "step": 0.5
+        },
+        {
+          "id": "summer_compensation_start_c",
+          "type": "number",
+          "label": {
+            "en": "Summer start temperature"
+          },
+          "hint": {
+            "en": "Outdoor temperature where summer compensation starts."
+          },
+          "units": {
+            "en": "degC"
+          },
+          "value": 20,
+          "min": 0,
+          "max": 40,
+          "step": 0.5
+        },
+        {
+          "id": "summer_compensation_end_c",
+          "type": "number",
+          "label": {
+            "en": "Summer end temperature"
+          },
+          "hint": {
+            "en": "Outdoor temperature where summer compensation applies in full. Must be above the start temperature."
+          },
+          "units": {
+            "en": "degC"
+          },
+          "value": 28,
+          "min": 0,
+          "max": 40,
           "step": 0.5
         }
       ]
@@ -796,6 +957,154 @@
               "step": 1
             }
           ]
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Unit status"
+      },
+      "children": [
+        {
+          "id": "active_alarms",
+          "type": "label",
+          "label": {
+            "en": "Active alarms"
+          },
+          "hint": {
+            "en": "Alarms the unit reports right now, with the Flexit alarm code. Checked about once a minute. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "minimum_fan_speed",
+          "type": "label",
+          "label": {
+            "en": "Minimum fan speed"
+          },
+          "hint": {
+            "en": "The lowest fan speed the unit allows. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "heating_coil_nominal_power",
+          "type": "label",
+          "label": {
+            "en": "Heating coil nominal power"
+          },
+          "hint": {
+            "en": "Rated power of the electric heating coil. Read-only, reported by the unit."
+          },
+          "value": "-"
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "label": {
+        "en": "Operating hours"
+      },
+      "children": [
+        {
+          "id": "runtime_total_hours",
+          "type": "label",
+          "label": {
+            "en": "Total"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "runtime_stop_hours",
+          "type": "label",
+          "label": {
+            "en": "Stop"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "runtime_away_hours",
+          "type": "label",
+          "label": {
+            "en": "Away"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "runtime_home_hours",
+          "type": "label",
+          "label": {
+            "en": "Home"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "runtime_high_hours",
+          "type": "label",
+          "label": {
+            "en": "High"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "runtime_fireplace_hours",
+          "type": "label",
+          "label": {
+            "en": "Fireplace"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "runtime_cooker_hood_hours",
+          "type": "label",
+          "label": {
+            "en": "Cooker hood"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "runtime_heat_exchanger_hours",
+          "type": "label",
+          "label": {
+            "en": "Heat exchanger"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
+        },
+        {
+          "id": "runtime_electric_heater_hours",
+          "type": "label",
+          "label": {
+            "en": "Electric heater"
+          },
+          "hint": {
+            "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+          },
+          "value": "-"
         }
       ]
     },

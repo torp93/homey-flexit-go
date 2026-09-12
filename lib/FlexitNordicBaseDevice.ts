@@ -47,22 +47,18 @@ import {
   MAX_DEICING_PERCENT,
   normalizeDeicingPercent,
 } from './UnitRegistry';
+import { migrateCapabilities } from './capabilityMigration';
+import {
+  HEATING_COIL_ENABLED_SETTING,
+  UNIT_NUMERIC_SETTINGS,
+  UNIT_SETTING_ORDER_RULES,
+  findUnitNumericSetting,
+  normalizeUnitNumericSetting,
+} from './unitSettings';
 
 const RESET_FILTER_CAPABILITY = 'button.reset_filter';
 const REGISTRY_SETTING_SUPPRESSION_WINDOW_MS = 30_000;
 const SETTING_SYNC_TOLERANCE = 0.1;
-const CAPABILITY_ORDER_ATTEMPT_STORE_KEY = 'capabilityOrderAttempt';
-const REQUIRED_CAPABILITIES = [
-  'measure_temperature.supply',
-  'measure_temperature.exhaust',
-  'dehumidification_active',
-  'free_cooling_active',
-  'deicing_active',
-  'ventilation_stopped',
-  RESET_FILTER_CAPABILITY,
-  'measure_fan_setpoint_percent',
-  'measure_fan_setpoint_percent.extract',
-] as const;
 const FREE_COOLING_SETTING_KEYS = [
   FREE_COOLING_ENABLED_SETTING,
   FREE_COOLING_TEMPERATURE_SETPOINT_SETTING,
@@ -76,6 +72,10 @@ const DEICING_SETTING_KEYS = [
   DEICING_ROTOR_SPEED_SETTING,
   DEICING_SUPPLY_FAN_SETTING,
   DEICING_EXHAUST_FAN_SETTING,
+];
+const UNIT_SETTING_KEYS = [
+  HEATING_COIL_ENABLED_SETTING,
+  ...UNIT_NUMERIC_SETTINGS.map((setting) => setting.settingKey),
 ];
 const FREE_COOLING_DT_START_LABEL = 'free cooling start temperature difference';
 const FREE_COOLING_DT_STOP_LABEL = 'free cooling stop temperature difference';
@@ -131,82 +131,8 @@ export abstract class FlexitNordicBaseDevice extends Homey.Device {
 
   protected async initSharedCapabilities() {
     await this.setClass('airtreatment');
-    for (const capability of REQUIRED_CAPABILITIES) {
-      if (this.hasCapability(capability)) continue;
-      try {
-        await this.addCapability(capability);
-        this.getLogger().info('device.capability.added', 'Added missing capability', { capability });
-      } catch (e) {
-        this.getLogger().error('device.capability.add.failed', 'Failed to add missing capability', e, {
-          capability,
-        });
-      }
-    }
-    await this.alignCapabilityOrderToManifest();
-  }
-
-  /**
-   * addCapability always appends, so a capability introduced after pairing (such as the
-   * supply air tile) ends up last on an existing device instead of where the manifest puts
-   * it, and the device page shows it there. Homey has no reorder API, and rebuilding only
-   * the diverging tail changes the array without moving the page, so every capability is
-   * removed and added back in manifest order. Insights history is kept, because logs are
-   * keyed on the capability id.
-   *
-   * Expensive and not atomic, so it only runs when the order is actually wrong. A rebuild
-   * that does not take is attempted once per target order; the marker is written last and
-   * only when nothing failed, so a rebuild that dies halfway is repaired on the next start.
-   */
-  private async alignCapabilityOrderToManifest() {
-    if (typeof this.removeCapability !== 'function' || typeof this.getCapabilities !== 'function') return;
-
     const { driver } = this as unknown as { driver?: { manifest?: { capabilities?: unknown } } };
-    const declared = driver?.manifest?.capabilities;
-    if (!Array.isArray(declared)) return;
-
-    const current = this.getCapabilities();
-    const wanted = declared.filter(
-      (capability): capability is string => typeof capability === 'string' && current.includes(capability),
-    );
-    // Membership is reconciled above; if the lists still differ in content, order is not the issue.
-    if (wanted.length !== current.length) return;
-    if (wanted.join('|') === current.join('|')) return;
-
-    const signature = wanted.join(',');
-    if (this.getStoreValue(CAPABILITY_ORDER_ATTEMPT_STORE_KEY) === signature) {
-      this.getLogger().info(
-        'device.capability.order.skipped',
-        'Capability order still differs from the manifest after a rebuild; not retrying',
-        { current },
-      );
-      return;
-    }
-
-    let failed = false;
-    this.getLogger().info('device.capability.order.rebuild', 'Rebuilding capability order', { wanted });
-    for (const capability of current) {
-      try {
-        await this.removeCapability(capability);
-      } catch (e) {
-        failed = true;
-        this.getLogger().error('device.capability.order.remove.failed', 'Failed to remove capability', e, {
-          capability,
-        });
-      }
-    }
-    for (const capability of wanted) {
-      try {
-        await this.addCapability(capability);
-      } catch (e) {
-        failed = true;
-        this.getLogger().error('device.capability.order.add.failed', 'Failed to re-add capability', e, {
-          capability,
-        });
-      }
-    }
-
-    if (failed) return;
-    await this.setStoreValue(CAPABILITY_ORDER_ATTEMPT_STORE_KEY, signature);
+    await migrateCapabilities(this, driver?.manifest?.capabilities, this.getLogger());
   }
 
   protected registerSharedCapabilityListeners(unitId: string) {
@@ -300,6 +226,7 @@ export abstract class FlexitNordicBaseDevice extends Homey.Device {
       );
       const freeCoolingChanged = FREE_COOLING_SETTING_KEYS.some((key) => effectiveChangedKeys.includes(key));
       const deicingChanged = DEICING_SETTING_KEYS.some((key) => effectiveChangedKeys.includes(key));
+      const unitSettingsChanged = UNIT_SETTING_KEYS.some((key) => effectiveChangedKeys.includes(key));
       const fireplaceDurationChanged = effectiveChangedKeys.includes(FIREPLACE_DURATION_SETTING);
       const highDurationChanged = effectiveChangedKeys.includes(HIGH_DURATION_SETTING);
       const changedFanModes = this.getChangedFanModes(effectiveChangedKeys);
@@ -310,6 +237,7 @@ export abstract class FlexitNordicBaseDevice extends Homey.Device {
         && !awayTargetTemperatureChanged
         && !freeCoolingChanged
         && !deicingChanged
+        && !unitSettingsChanged
         && !fireplaceDurationChanged
         && !highDurationChanged
         && changedFanModes.length === 0
@@ -317,6 +245,7 @@ export abstract class FlexitNordicBaseDevice extends Homey.Device {
 
       // Reject an invalid dT start/stop pair before anything is written to the unit.
       this.validateFreeCoolingDtSettings(newSettings, effectiveChangedKeys);
+      this.validateUnitSettingOrder(newSettings, effectiveChangedKeys);
 
       const { unitId } = this.getData();
       await this.maybeHandleFilterIntervalSetting(
@@ -330,6 +259,7 @@ export abstract class FlexitNordicBaseDevice extends Homey.Device {
       );
       await this.maybeHandleFreeCoolingSettings(unitId, newSettings, effectiveChangedKeys);
       await this.maybeHandleDeicingSettings(unitId, newSettings, effectiveChangedKeys);
+      await this.maybeHandleUnitSettings(unitId, newSettings, effectiveChangedKeys);
       await this.maybeHandleFireplaceDurationSetting(
         unitId, newSettings, fireplaceDurationChanged,
       );
@@ -553,6 +483,50 @@ export abstract class FlexitNordicBaseDevice extends Homey.Device {
         normalize: normalizeDeicingPercent,
         validate: validateDeicingPercent,
         formatValue: (nextValue) => `${nextValue}%`,
+      });
+    }
+  }
+
+  private validateUnitSettingOrder(newSettings: Record<string, unknown>, changedKeys: string[]) {
+    for (const rule of UNIT_SETTING_ORDER_RULES) {
+      if (!changedKeys.includes(rule.lower) && !changedKeys.includes(rule.higher)) continue;
+      const lower = this.resolveRequestedUnitSetting(newSettings, changedKeys, rule.lower);
+      const higher = this.resolveRequestedUnitSetting(newSettings, changedKeys, rule.higher);
+      if (lower !== undefined && higher !== undefined && lower >= higher) throw new Error(rule.message);
+    }
+  }
+
+  /** The new value when the setting changed, otherwise the current one; undefined if unknown. */
+  private resolveRequestedUnitSetting(
+    newSettings: Record<string, unknown>,
+    changedKeys: string[],
+    settingKey: string,
+  ): number | undefined {
+    const setting = findUnitNumericSetting(settingKey);
+    if (!setting) return undefined;
+    if (!changedKeys.includes(settingKey)) return this.getFiniteSetting(settingKey);
+    return normalizeUnitNumericSetting(setting, newSettings[settingKey]);
+  }
+
+  private async maybeHandleUnitSettings(
+    unitId: string,
+    newSettings: Record<string, unknown>,
+    changedKeys: string[],
+  ) {
+    await this.maybeHandleBooleanSetting(unitId, newSettings, changedKeys.includes(HEATING_COIL_ENABLED_SETTING), {
+      settingKey: HEATING_COIL_ENABLED_SETTING,
+      label: 'electric heating coil',
+      update: async (nextValue) => {
+        await Registry.setHeatingCoilEnabled(unitId, nextValue);
+      },
+    });
+    for (const setting of UNIT_NUMERIC_SETTINGS) {
+      await this.maybeHandleNumericSetting(unitId, newSettings, changedKeys.includes(setting.settingKey), {
+        settingKey: setting.settingKey,
+        label: setting.label,
+        normalize: (value) => normalizeUnitNumericSetting(setting, value),
+        update: (nextValue) => Registry.setUnitNumericSetting(unitId, setting.settingKey, nextValue),
+        formatValue: (nextValue) => `${nextValue} ${setting.unit}`,
       });
     }
   }

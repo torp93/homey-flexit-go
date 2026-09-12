@@ -1,0 +1,28 @@
+{
+  "title": {
+    "en": "Set filter change interval"
+  },
+  "titleFormatted": {
+    "en": "Set filter change interval to [[months]] months"
+  },
+  "hint": {
+    "en": "Updates how often the unit asks for new filters."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    },
+    {
+      "name": "months",
+      "type": "number",
+      "title": {
+        "en": "Months"
+      },
+      "min": 3,
+      "max": 12,
+      "step": 1
+    }
+  ]
+}

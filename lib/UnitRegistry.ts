@@ -1,4 +1,33 @@
 /* eslint-disable max-lines */
+import {
+  HEATING_COIL_ENABLED_SETTING,
+  UNIT_NUMERIC_SETTINGS,
+  normalizeUnitNumericSetting,
+} from './unitSettings';
+import {
+  ACTIVE_ALARMS_SETTING,
+  ALARM_ACTIVE_CAPABILITY,
+  BOOLEAN_MIRROR_CAPABILITIES,
+  FILTER_LIFE_CAPABILITY,
+  HEATING_COIL_HOURS_CAPABILITY,
+  HEATING_COIL_HOURS_DATA_KEY,
+  LIVE_READINGS,
+  OPERATING_HOURS_LABEL_POINTS,
+  UNIT_ALARMS,
+  UNIT_STATUS_LABEL_POINTS,
+  alarmDataKey,
+  alarmObjectId,
+  formatActiveAlarmsLabel,
+  observeUnitReadings,
+  readUnitReading,
+  resolveActiveAlarms,
+} from './unitReadings';
+import type {
+  UnitAlarmDefinition,
+  UnitEventPayload,
+  UnitReadingName,
+  UnitReadings,
+} from './unitReadings';
 import { getBacnetClient, BacnetEnums, setBacnetLogger } from './bacnetClient';
 import { discoverFlexitUnits } from './flexitDiscovery';
 import {
@@ -392,11 +421,12 @@ const CAPABILITY_MAPPINGS = [
   { dataKey: 'measure_temperature.exhaust', capability: 'measure_temperature.exhaust' },
   { dataKey: 'measure_temperature.extract', capability: 'measure_temperature.extract' },
   { dataKey: 'measure_power', capability: 'measure_power' },
-  { dataKey: 'measure_humidity', capability: 'measure_humidity' },
   { dataKey: 'measure_motor_rpm', capability: 'measure_motor_rpm' },
   { dataKey: 'measure_motor_rpm.extract', capability: 'measure_motor_rpm.extract' },
   { dataKey: 'measure_fan_speed_percent', capability: 'measure_fan_speed_percent' },
   { dataKey: 'measure_fan_speed_percent.extract', capability: 'measure_fan_speed_percent.extract' },
+  ...LIVE_READINGS.map(({ dataKey, capability }) => ({ dataKey, capability })),
+  { dataKey: HEATING_COIL_HOURS_DATA_KEY, capability: HEATING_COIL_HOURS_CAPABILITY },
 ] as const;
 const DEHUMIDIFICATION_ACTIVE_CAPABILITY = 'dehumidification_active';
 const FREE_COOLING_ACTIVE_CAPABILITY = 'free_cooling_active';
@@ -460,6 +490,25 @@ const DEICING_PERCENT_POINTS: Record<'rotorSpeed' | 'supplyFan' | 'exhaustFan', 
     writeGroup: DEICING_WRITE_GROUP,
   },
 };
+const UNIT_SETTINGS_WRITE_GROUP = 'unit_settings';
+// Flexit GO "Tilleggsvarme" and "Uteluftkompensasjon", verified against a real unit.
+const UNIT_NUMERIC_SETTING_INSTANCES: Record<string, number> = {
+  heating_neutral_zone_home_k: 1921,
+  heating_neutral_zone_away_k: 1987,
+  winter_compensation_k: 107,
+  winter_compensation_start_c: 106,
+  winter_compensation_end_c: 102,
+  summer_compensation_k: 79,
+  summer_compensation_start_c: 78,
+  summer_compensation_end_c: 75,
+};
+const UNIT_NUMERIC_SETTING_POINTS: ReadonlyArray<AnalogSettingPoint> = UNIT_NUMERIC_SETTINGS.map((setting) => ({
+  objectId: { type: OBJECT_TYPE.ANALOG_VALUE, instance: UNIT_NUMERIC_SETTING_INSTANCES[setting.settingKey] },
+  settingKey: setting.settingKey,
+  normalize: (value: unknown) => normalizeUnitNumericSetting(setting, value),
+  label: setting.label,
+  writeGroup: UNIT_SETTINGS_WRITE_GROUP,
+}));
 // Matches what Flexit GO exposes: these are configured on the unit and only displayed here.
 const READ_ONLY_LABEL_POINTS: ReadonlyArray<ReadOnlyLabelPoint> = [
   {
@@ -497,12 +546,31 @@ const READ_ONLY_LABEL_POINTS: ReadonlyArray<ReadOnlyLabelPoint> = [
     settingKey: 'deicing_off_time_ramp_end_temperature',
     format: formatTemperatureLabel,
   },
+  ...OPERATING_HOURS_LABEL_POINTS,
+  ...UNIT_STATUS_LABEL_POINTS,
 ];
 // Polled under their setting key, so the settings sync can read them straight from poll data.
 const POLLED_SETTING_POINTS = [
   ...Object.values(FREE_COOLING_DT_POINTS),
   ...Object.values(DEICING_PERCENT_POINTS),
   ...READ_ONLY_LABEL_POINTS,
+  ...UNIT_NUMERIC_SETTING_POINTS,
+];
+// Read on every poll; everything else that rarely changes goes through the slow poll.
+const FAST_SETTING_POINTS = [
+  ...Object.values(FREE_COOLING_DT_POINTS),
+  ...Object.values(DEICING_PERCENT_POINTS),
+];
+const ALARM_CODE_OBJECTS = {
+  a: { type: OBJECT_TYPE.ANALOG_VALUE, instance: 1794 }, // Present A-alarm code
+  b: { type: OBJECT_TYPE.ANALOG_VALUE, instance: 1846 }, // Present B-alarm code
+};
+const SLOW_POLL_OBJECTS = [
+  ...READ_ONLY_LABEL_POINTS.map((point) => point.objectId),
+  ...UNIT_NUMERIC_SETTING_POINTS.map((point) => point.objectId),
+  ...UNIT_ALARMS.map((alarm) => alarmObjectId(alarm.instance)),
+  ALARM_CODE_OBJECTS.a,
+  ALARM_CODE_OBJECTS.b,
 ];
 
 const MODE_RF_INPUT_MAP: Record<number, 'home' | 'away' | 'high' | 'fireplace'> = {
@@ -876,6 +944,11 @@ interface UnitState {
   ventilationStoppedStateInitialized: boolean;
   heatingCoilEnabled?: boolean;
   heatingCoilStateInitialized: boolean;
+  lastPollData?: Record<string, number>;
+  slowPollData?: Record<string, number>;
+  lastSlowPollAt?: number;
+  slowPollInFlight?: boolean;
+  readings?: UnitReadings;
 }
 
 export type ModeWidgetTemporaryMode = 'temporary_high' | 'fireplace' | 'cooker_hood';
@@ -993,6 +1066,11 @@ interface RegistryDependencies {
   getBacnetClient(port: number): any;
   discoverFlexitUnits: typeof discoverFlexitUnits;
   writeTimeoutMs?: number;
+  slowPollIntervalMs?: number;
+}
+
+interface UnitEvent extends UnitEventPayload {
+  device: FlexitDevice;
 }
 
 interface FanSetpointChangedEvent {
@@ -1022,6 +1100,12 @@ interface VentilationStoppedStateChangedEvent {
   stopped: boolean;
 }
 
+function chunkArray<T>(items: ReadonlyArray<T>, size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) chunks.push(items.slice(index, index + size));
+  return chunks;
+}
+
 function presentValueRequest(objectId: { type: number; instance: number }) {
   return {
     objectId,
@@ -1046,7 +1130,6 @@ function buildPollRequest() {
       type: OBJECT_TYPE.ANALOG_INPUT,
       instance: EXTRACT_AIR_TEMPERATURE_ALT_INSTANCE,
     }), // Extract Temp (alternate mapping)
-    presentValueRequest({ type: OBJECT_TYPE.ANALOG_INPUT, instance: 96 }), // Humidity
     presentValueRequest({ type: OBJECT_TYPE.ANALOG_VALUE, instance: 194 }), // Heater Power
     presentValueRequest(BACNET_OBJECTS.heatingCoilEnable), // Heating coil enable
 
@@ -1064,8 +1147,10 @@ function buildPollRequest() {
     presentValueRequest(BACNET_OBJECTS.deicingEnabled),
     presentValueRequest(BACNET_OBJECTS.deicingRotorActive),
     presentValueRequest(BACNET_OBJECTS.deicingFanActive),
-    // Free cooling dT, de-icing speeds, and the read-only de-icing and temperature control values
-    ...POLLED_SETTING_POINTS.map((point) => presentValueRequest(point.objectId)),
+    // Free cooling dT and de-icing speeds; the other unit settings are read in the slow poll
+    ...FAST_SETTING_POINTS.map((point) => presentValueRequest(point.objectId)),
+    // Heat recovery, heating coil, supply air target and uptime readings
+    ...LIVE_READINGS.map((liveReading) => presentValueRequest(liveReading.objectId)),
     presentValueRequest(FAN_PROFILE_OBJECTS.home.supply), // Setpoint supply HOME
     presentValueRequest(FAN_PROFILE_OBJECTS.home.exhaust), // Setpoint exhaust HOME
     presentValueRequest(FAN_PROFILE_OBJECTS.away.supply), // Setpoint supply AWAY
@@ -1123,7 +1208,6 @@ const POLL_VALUE_MAPPINGS: Record<string, (value: number, target: PollParseTarge
   ) => {
     target.extractTempAlt = value;
   },
-  [objectKey(OBJECT_TYPE.ANALOG_INPUT, 96)]: mapPollValue('measure_humidity'),
   [objectKey(OBJECT_TYPE.ANALOG_VALUE, 194)]: mapPollValue(
     'measure_power',
     (value) => value * 1000,
@@ -1208,9 +1292,24 @@ const POLL_VALUE_MAPPINGS: Record<string, (value: number, target: PollParseTarge
   [objectKey(OBJECT_TYPE.ANALOG_VALUE, 2031)]: mapPollValue('remaining_rapid_vent'),
   [objectKey(OBJECT_TYPE.ANALOG_VALUE, 2038)]: mapPollValue('remaining_fireplace_vent'),
   [objectKey(OBJECT_TYPE.ANALOG_VALUE, 2125)]: mapPollValue('mode_rf_input'),
+  ...Object.fromEntries(LIVE_READINGS.map((liveReading) => [
+    objectIdKey(liveReading.objectId),
+    mapPollValue(liveReading.dataKey),
+  ])),
+  ...Object.fromEntries(UNIT_ALARMS.map((alarm) => [
+    objectIdKey(alarmObjectId(alarm.instance)),
+    mapPollValue(alarmDataKey(alarm.instance)),
+  ])),
+  [objectIdKey(ALARM_CODE_OBJECTS.a)]: mapPollValue('alarm_code_a'),
+  [objectIdKey(ALARM_CODE_OBJECTS.b)]: mapPollValue('alarm_code_b'),
 };
 
 const POLL_REQUEST = buildPollRequest();
+const SLOW_POLL_INTERVAL_MS = 60_000;
+const SLOW_POLL_MAX_OBJECTS_PER_REQUEST = 35;
+// Each request stays well below the unit's 1476-byte APDU without segmentation.
+const SLOW_POLL_REQUESTS = chunkArray(SLOW_POLL_OBJECTS, SLOW_POLL_MAX_OBJECTS_PER_REQUEST)
+  .map((objects) => objects.map((objectId) => presentValueRequest(objectId)));
 
 export class UnitRegistry {
     private units: Map<string, UnitState> = new Map();
@@ -1226,6 +1325,7 @@ export class UnitRegistry {
       event: VentilationStoppedStateChangedEvent,
     ) => void;
     private heatingCoilStateChangedHandler?: (event: HeatingCoilStateChangedEvent) => void;
+    private unitEventHandler?: (event: UnitEvent) => void;
 
     constructor(dependencies?: Partial<RegistryDependencies>) {
       this.dependencies = {
@@ -1270,6 +1370,10 @@ export class UnitRegistry {
 
     setHeatingCoilStateChangedHandler(handler?: (event: HeatingCoilStateChangedEvent) => void) {
       this.heatingCoilStateChangedHandler = handler;
+    }
+
+    setUnitEventHandler(handler?: (event: UnitEvent) => void) {
+      this.unitEventHandler = handler;
     }
 
     private syncBacnetLogger() {
@@ -2288,6 +2392,35 @@ export class UnitRegistry {
       await this.setAnalogSetting(unitId, DEICING_PERCENT_POINTS.exhaustFan, value);
     }
 
+    async setUnitNumericSetting(unitId: string, settingKey: string, value: number) {
+      const point = UNIT_NUMERIC_SETTING_POINTS.find((candidate) => candidate.settingKey === settingKey);
+      if (!point) throw new Error(`Unknown unit setting: ${settingKey}`);
+      await this.setAnalogSetting(unitId, point, value);
+    }
+
+    async setFilterChangeIntervalMonths(unitId: string, months: number) {
+      const rounded = Math.round(Number(months));
+      if (
+        !Number.isFinite(rounded)
+        || rounded < MIN_FILTER_CHANGE_INTERVAL_MONTHS
+        || rounded > MAX_FILTER_CHANGE_INTERVAL_MONTHS
+      ) {
+        throw new Error(
+          `Filter change interval must be between ${MIN_FILTER_CHANGE_INTERVAL_MONTHS}`
+          + ` and ${MAX_FILTER_CHANGE_INTERVAL_MONTHS} months`,
+        );
+      }
+      await this.setFilterChangeInterval(unitId, filterIntervalMonthsToHours(rounded));
+    }
+
+    async getUnitReading(unitId: string, reading: UnitReadingName): Promise<number | boolean> {
+      const unit = this.units.get(unitId);
+      if (!unit) throw new Error('Unit not found');
+      const value = readUnitReading(unit.readings, reading);
+      if (value === undefined) throw new Error('This value has not been read from the unit yet.');
+      return value;
+    }
+
     private async setAnalogSetting(unitId: string, point: AnalogSettingPoint, value: number) {
       const unit = this.units.get(unitId);
       if (!unit) throw new Error('Unit not found');
@@ -2421,6 +2554,7 @@ export class UnitRegistry {
 
         const verifiedValue = await this.readPresentValue(context.client, unit, objectId);
         unit.probeValues.set(objectKey(objectId.type, objectId.instance), verifiedValue);
+        this.updateSlowPollCache(unit, objectId, verifiedValue);
         const normalizedVerifiedValue = normalize(verifiedValue);
         if (!valuesMatch(normalizedVerifiedValue, expectedValue)) {
           throw new Error(
@@ -2998,10 +3132,61 @@ export class UnitRegistry {
         this.handlePollSuccess(unit);
         unit.lastPollAt = Date.now();
         const data = this.parsePollValues(unit, value.values, unit.lastPollAt);
-        this.distributeData(unit, data);
+        unit.lastPollData = data;
+        this.distributeData(unit, { ...(unit.slowPollData ?? {}), ...data });
+        this.maybeStartSlowPoll(unit);
       } catch (e) {
         this.error(`[UnitRegistry] Parse error for ${unit.unitId}:`, e);
       }
+    }
+
+    /** Settings, operating hours and alarms change rarely; they are read at most once a minute. */
+    private maybeStartSlowPoll(unit: UnitState) {
+      if (unit.slowPollInFlight) return;
+      const intervalMs = this.dependencies.slowPollIntervalMs ?? SLOW_POLL_INTERVAL_MS;
+      if (unit.lastSlowPollAt !== undefined && Date.now() - unit.lastSlowPollAt < intervalMs) return;
+      unit.slowPollInFlight = true;
+      unit.lastSlowPollAt = Date.now();
+      this.readSlowPollRequest(unit, 0);
+    }
+
+    private readSlowPollRequest(unit: UnitState, index: number) {
+      if (!this.isTrackedUnit(unit)) {
+        unit.slowPollInFlight = false;
+        return;
+      }
+      const request = SLOW_POLL_REQUESTS[index];
+      if (!request) {
+        unit.slowPollInFlight = false;
+        this.distributeData(unit, { ...(unit.slowPollData ?? {}), ...(unit.lastPollData ?? {}) });
+        return;
+      }
+      try {
+        const client = this.dependencies.getBacnetClient(unit.bacnetPort);
+        client.readPropertyMultiple(unit.ip, request, (err: any, value: any) => {
+          if (err || !value?.values) {
+            unit.slowPollInFlight = false;
+            this.log(`[UnitRegistry] Slow poll failed for ${unit.unitId}:`, err ?? value);
+            return;
+          }
+          try {
+            const data = this.parsePollValues(unit, value.values, Date.now());
+            unit.slowPollData = { ...(unit.slowPollData ?? {}), ...data };
+          } catch (error) {
+            this.error(`[UnitRegistry] Slow poll parse error for ${unit.unitId}:`, error);
+          }
+          this.readSlowPollRequest(unit, index + 1);
+        });
+      } catch (error) {
+        unit.slowPollInFlight = false;
+        this.error(`[UnitRegistry] Slow poll error for ${unit.unitId}:`, error);
+      }
+    }
+
+    /** Keeps a verified write from being overwritten by an older slow poll value. */
+    private updateSlowPollCache(unit: UnitState, objectId: { type: number; instance: number }, value: number) {
+      if (!unit.slowPollData) return;
+      POLL_VALUE_MAPPINGS[objectIdKey(objectId)]?.(value, { data: unit.slowPollData });
     }
 
     private parsePollValues(unit: UnitState, values: any[], pollTime: number): Record<string, number> {
@@ -3169,42 +3354,105 @@ export class UnitRegistry {
       const freeCoolingActive = resolveFreeCoolingActive(data);
       const ventilationStopped = resolveVentilationStopped(data);
       const deicingActive = resolveDeicingActive(data);
+      const activeAlarms = resolveActiveAlarms(data);
+      const filterLife = this.computeFilterLife(data);
       this.observeDehumidificationState(unit, dehumidificationActive);
       this.observeFreeCoolingState(unit, freeCoolingActive);
       this.observeVentilationStoppedState(unit, ventilationStopped);
       this.observeHeatingCoilState(unit, data.heating_coil_enabled);
+      unit.readings = unit.readings ?? {};
+      const unitEvents = observeUnitReadings(unit.readings, {
+        activeAlarms,
+        deicingActive,
+        heatingCoilOutput: data.heating_coil_output_percent,
+        uptimeMinutes: data.uptime_minutes,
+        heatRecoveryEfficiency: data.heat_recovery_efficiency,
+        heatExchangerSpeed: data.heat_exchanger_percent,
+        filterLife,
+      });
 
       const mode = this.resolveFanMode(unit, data);
       const setpointMode = this.resolveCurrentFanSetpointMode(data, mode);
       const temperatureMode = this.resolveCurrentTemperatureSetpointMode(data, mode);
+      const states: Array<[string, boolean | undefined]> = [
+        [DEHUMIDIFICATION_ACTIVE_CAPABILITY, dehumidificationActive],
+        [FREE_COOLING_ACTIVE_CAPABILITY, freeCoolingActive],
+        [VENTILATION_STOPPED_CAPABILITY, ventilationStopped],
+        [DEICING_ACTIVE_CAPABILITY, deicingActive],
+        [ALARM_ACTIVE_CAPABILITY, activeAlarms === undefined ? undefined : activeAlarms.length > 0],
+      ];
 
       for (const device of unit.devices) {
         this.applyMappedCapabilities(device, data);
         this.applyCurrentTargetTemperatureCapability(device, data, temperatureMode);
         this.applyCurrentFanSetpointCapabilities(unit, device, data, setpointMode);
-        this.syncTargetTemperatureSettings(device, data);
-        this.syncFreeCoolingSettings(device, data);
-        this.syncDeicingSettings(device, data);
-        this.syncReadOnlyLabelSettings(device, data);
-        this.syncFanProfileSettings(device, data);
-        this.syncFireplaceDurationSetting(device, data[FIREPLACE_DURATION_DATA_KEY]);
-        this.syncHighDurationSetting(device, data[HIGH_DURATION_DATA_KEY]);
-        this.syncFilterIntervalSetting(device, data.filter_limit);
-        const filterLife = this.computeFilterLife(data);
-        if (filterLife !== undefined) this.setCapability(device, 'measure_hepa_filter', filterLife);
-        if (dehumidificationActive !== undefined) {
-          this.setCapability(device, DEHUMIDIFICATION_ACTIVE_CAPABILITY, dehumidificationActive);
-        }
-        if (freeCoolingActive !== undefined) {
-          this.setCapability(device, FREE_COOLING_ACTIVE_CAPABILITY, freeCoolingActive);
-        }
-        if (ventilationStopped !== undefined) {
-          this.setCapability(device, VENTILATION_STOPPED_CAPABILITY, ventilationStopped);
-        }
-        if (deicingActive !== undefined) {
-          this.setCapability(device, DEICING_ACTIVE_CAPABILITY, deicingActive);
-        }
+        this.syncDeviceSettings(device, data);
+        this.syncActiveAlarmsSetting(device, activeAlarms);
+        if (filterLife !== undefined) this.setCapability(device, FILTER_LIFE_CAPABILITY, filterLife);
+        this.applyStateCapabilities(device, states);
         if (mode !== undefined) this.setCapability(device, 'fan_mode', mode);
+      }
+      this.emitUnitEvents(unit, unitEvents);
+    }
+
+    private syncDeviceSettings(device: FlexitDevice, data: Record<string, number>) {
+      this.syncTargetTemperatureSettings(device, data);
+      this.syncFreeCoolingSettings(device, data);
+      this.syncDeicingSettings(device, data);
+      this.syncUnitSettings(device, data);
+      this.syncReadOnlyLabelSettings(device, data);
+      this.syncFanProfileSettings(device, data);
+      this.syncFireplaceDurationSetting(device, data[FIREPLACE_DURATION_DATA_KEY]);
+      this.syncHighDurationSetting(device, data[HIGH_DURATION_DATA_KEY]);
+      this.syncFilterIntervalSetting(device, data.filter_limit);
+    }
+
+    /** Sets each known boolean state and its hidden 0/1 mirror that Insights can chart. */
+    private applyStateCapabilities(device: FlexitDevice, states: ReadonlyArray<[string, boolean | undefined]>) {
+      for (const [capability, value] of states) {
+        if (value === undefined) continue;
+        this.setCapability(device, capability, value);
+        const mirror = BOOLEAN_MIRROR_CAPABILITIES[capability];
+        if (mirror) this.setCapability(device, mirror, value ? 1 : 0);
+      }
+    }
+
+    private syncActiveAlarmsSetting(
+      device: FlexitDevice,
+      activeAlarms: ReadonlyArray<UnitAlarmDefinition> | undefined,
+    ) {
+      if (activeAlarms === undefined) return;
+      const label = formatActiveAlarmsLabel(activeAlarms);
+      if (device.getSetting(ACTIVE_ALARMS_SETTING) === label) return;
+      this.updateDeviceSettings(device, { [ACTIVE_ALARMS_SETTING]: label }).catch((err) => {
+        this.log(`[UnitRegistry] Failed to sync active alarms for ${device.getData().unitId}:`, err);
+      });
+    }
+
+    private syncUnitSettings(device: FlexitDevice, data: Record<string, number>) {
+      const updates: Record<string, boolean | number> = {};
+      const heatingCoilEnabled = resolveBinaryFlag(data.heating_coil_enabled);
+      if (heatingCoilEnabled !== undefined && device.getSetting(HEATING_COIL_ENABLED_SETTING) !== heatingCoilEnabled) {
+        updates[HEATING_COIL_ENABLED_SETTING] = heatingCoilEnabled;
+      }
+      this.collectNumericSettingUpdates(device, data, UNIT_NUMERIC_SETTING_POINTS, updates);
+      if (Object.keys(updates).length === 0) return;
+
+      this.updateDeviceSettings(device, updates).catch((err) => {
+        this.log(`[UnitRegistry] Failed to sync unit settings for ${device.getData().unitId}:`, err);
+      });
+    }
+
+    private emitUnitEvents(unit: UnitState, events: ReadonlyArray<UnitEventPayload>) {
+      if (!this.unitEventHandler || events.length === 0) return;
+      for (const device of unit.devices) {
+        for (const event of events) {
+          try {
+            this.unitEventHandler({ ...event, device });
+          } catch (error) {
+            this.log('[UnitRegistry] Failed to handle unit event callback:', error);
+          }
+        }
       }
     }
 
@@ -4759,7 +5007,7 @@ export class UnitRegistry {
 
       const { plantId } = unit.cloud;
 
-      const paths = POLL_REQUEST.map((req: any) => {
+      const paths = [...POLL_REQUEST, ...SLOW_POLL_REQUESTS.flat()].map((req: any) => {
         const objId = req.objectId;
         return bacnetObjectToCloudPath(objId.type, objId.instance);
       }).filter((path) => !unit.unsupportedCloudPollPaths.has(path));

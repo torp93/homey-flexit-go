@@ -1,0 +1,27 @@
+{
+  "title": {
+    "en": "Unit restarted"
+  },
+  "titleFormatted": {
+    "en": "Unit restarted"
+  },
+  "hint": {
+    "en": "Triggers when the time since the unit started drops, which means the unit restarted."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "uptime_minutes",
+      "type": "number",
+      "title": {
+        "en": "Minutes since start"
+      }
+    }
+  ]
+}

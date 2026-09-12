@@ -1,0 +1,18 @@
+{
+  "title": {
+    "en": "An alarm is active"
+  },
+  "titleFormatted": {
+    "en": "An alarm is active"
+  },
+  "hint": {
+    "en": "Checks whether the unit has an active alarm. The unit is checked about once a minute."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ]
+}

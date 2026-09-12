@@ -19,6 +19,7 @@ class MockHomeyApp {
         }),
         getDeviceTriggerCard: sinon.stub().returns({
           trigger: sinon.stub().resolves(),
+          registerRunListener: sinon.stub(),
         }),
       },
       drivers: {
@@ -61,8 +62,33 @@ function createRegistryStub(overrides: Record<string, any> = {}) {
     setFreeCoolingEnabled: sinon.stub().resolves(),
     setFreeCoolingTemperatureSetpoint: sinon.stub().resolves(),
     setFreeCoolingOutsideTemperatureLimit: sinon.stub().resolves(),
+    setUnitEventHandler: sinon.stub(),
+    getUnitReading: sinon.stub().resolves(0),
+    setTemperatureSetpoint: sinon.stub().resolves(),
+    setUnitNumericSetting: sinon.stub().resolves(),
+    setFreeCoolingDtStart: sinon.stub().resolves(),
+    setFreeCoolingDtStop: sinon.stub().resolves(),
+    setDeicingEnabled: sinon.stub().resolves(),
+    resetFilterTimer: sinon.stub().resolves(),
+    setFilterChangeIntervalMonths: sinon.stub().resolves(),
     ...overrides,
   };
+}
+
+/** Hands out one stub card per id, so tests can reach any card the app registers. */
+function wireCardsById(app: any) {
+  const byId = new Map<string, any>();
+  const cardFor = (id: string, create: () => any) => {
+    if (!byId.has(id)) byId.set(id, create());
+    return byId.get(id);
+  };
+  app.homey.flow.getDeviceTriggerCard.callsFake((id: string) => cardFor(id, () => ({
+    trigger: sinon.stub().resolves(),
+    registerRunListener: sinon.stub(),
+  })));
+  app.homey.flow.getConditionCard.callsFake((id: string) => cardFor(id, () => ({ registerRunListener: sinon.stub() })));
+  app.homey.flow.getActionCard.callsFake((id: string) => cardFor(id, () => ({ registerRunListener: sinon.stub() })));
+  return byId;
 }
 
 function createAppClass(registryStub: Record<string, any>, normalizeFanProfilePercent?: (...args: any[]) => number) {
@@ -327,6 +353,120 @@ describe('App flow registration (vitest)', () => {
       device: { getData: () => ({ unitId: 'unit-1' }) },
       temperature: 35,
     })).rejects.toThrow('between 10 and 30');
+  });
+
+  it('forwards unit events to the matching trigger cards with tokens and state', async () => {
+    const registryStub = createRegistryStub();
+    const AppClass = createAppClass(registryStub);
+    const app = new AppClass();
+    const cards = wireCardsById(app);
+    await app.onInit();
+
+    const handler = registryStub.setUnitEventHandler.firstCall.args[0];
+    const device = { getData: () => ({ unitId: 'unit-1' }) };
+    handler({ device, type: 'alarm_raised', tokens: { alarm: 'Air filter polluted', code: '1020' }, state: {} });
+    handler({ device, type: 'filter_life_changed', tokens: { filter_life: 29 }, state: { previous: 30, current: 29 } });
+
+    expect(cards.get('alarm_raised').trigger.calledOnceWithExactly(
+      device, { alarm: 'Air filter polluted', code: '1020' }, {},
+    )).toBe(true);
+    expect(cards.get('filter_life_changed').trigger.calledOnce).toBe(true);
+    expect(cards.get('filter_life_dropped_below').trigger.calledOnceWithExactly(
+      device, { filter_life: 29 }, { previous: 30, current: 29 },
+    )).toBe(true);
+    expect(cards.get('alarm_cleared').trigger.called).toBe(false);
+  });
+
+  it('only runs the filter life dropped below trigger when the level is crossed', async () => {
+    const registryStub = createRegistryStub();
+    const AppClass = createAppClass(registryStub);
+    const app = new AppClass();
+    const cards = wireCardsById(app);
+    await app.onInit();
+
+    const listener = cards.get('filter_life_dropped_below').registerRunListener.firstCall.args[0];
+    expect(await listener({ percent: 30 }, { previous: 30, current: 29 })).toBe(true);
+    expect(await listener({ percent: 30 }, { previous: 29, current: 28 })).toBe(false);
+    expect(await listener({ percent: 20 }, { previous: 30, current: 29 })).toBe(false);
+  });
+
+  it('answers the unit condition cards from registry readings', async () => {
+    const readings: Record<string, unknown> = {
+      alarm_active: true,
+      deicing_active: false,
+      heating: true,
+      filter_life: 25,
+      heat_recovery_efficiency: 70,
+    };
+    const registryStub = createRegistryStub({
+      getUnitReading: sinon.stub().callsFake(async (_unitId: string, reading: string) => readings[reading]),
+    });
+    const AppClass = createAppClass(registryStub);
+    const app = new AppClass();
+    const cards = wireCardsById(app);
+    await app.onInit();
+
+    const device = { getData: () => ({ unitId: 'unit-1' }) };
+    const run = (id: string, args: Record<string, unknown> = {}) => (
+      cards.get(id).registerRunListener.firstCall.args[0]({ device, ...args })
+    );
+    expect(await run('unit_alarm_is_active')).toBe(true);
+    expect(await run('deicing_is_active')).toBe(false);
+    expect(await run('heating_coil_is_heating')).toBe(true);
+    expect(await run('filter_life_is_below', { percent: 30 })).toBe(true);
+    expect(await run('heat_recovery_efficiency_is_below', { percent: 60 })).toBe(false);
+    expect(registryStub.getUnitReading.calledWithExactly('unit-1', 'filter_life')).toBe(true);
+  });
+
+  it('forwards the unit action cards to the registry', async () => {
+    const registryStub = createRegistryStub();
+    const AppClass = createAppClass(registryStub);
+    const app = new AppClass();
+    const cards = wireCardsById(app);
+    await app.onInit();
+
+    const device = { getData: () => ({ unitId: 'unit-1' }), getSetting: sinon.stub().returns(undefined) };
+    const run = (id: string, args: Record<string, unknown> = {}) => (
+      cards.get(id).registerRunListener.firstCall.args[0]({ device, ...args })
+    );
+    expect(await run('set_supply_air_setpoint_mode', { mode: 'away', temperature: 19 })).toBe(true);
+    expect(await run('set_heating_neutral_zone', { mode: 'home', kelvin: 3 })).toBe(true);
+    expect(await run('set_outdoor_compensation', { setting: 'summer_compensation_k', value: -2 })).toBe(true);
+    expect(await run('set_free_cooling_dt', { threshold: 'stop', kelvin: 1 })).toBe(true);
+    expect(await run('set_deicing_enabled', { state: 'off' })).toBe(true);
+    expect(await run('reset_filter_timer')).toBe(true);
+    expect(await run('set_filter_change_interval', { months: 6 })).toBe(true);
+
+    expect(registryStub.setTemperatureSetpoint.calledOnceWithExactly('unit-1', 'away', 19)).toBe(true);
+    expect(registryStub.setUnitNumericSetting.calledWithExactly('unit-1', 'heating_neutral_zone_home_k', 3)).toBe(true);
+    expect(registryStub.setUnitNumericSetting.calledWithExactly('unit-1', 'summer_compensation_k', -2)).toBe(true);
+    expect(registryStub.setFreeCoolingDtStop.calledOnceWithExactly('unit-1', 1)).toBe(true);
+    expect(registryStub.setDeicingEnabled.calledOnceWithExactly('unit-1', false)).toBe(true);
+    expect(registryStub.resetFilterTimer.calledOnceWithExactly('unit-1')).toBe(true);
+    expect(registryStub.setFilterChangeIntervalMonths.calledOnceWithExactly('unit-1', 6)).toBe(true);
+  });
+
+  it('rejects unit action cards with an invalid mode or an inverted free cooling difference', async () => {
+    const registryStub = createRegistryStub();
+    const AppClass = createAppClass(registryStub);
+    const app = new AppClass();
+    const cards = wireCardsById(app);
+    await app.onInit();
+
+    const getSetting = sinon.stub();
+    getSetting.withArgs('free_cooling_dt_start_k').returns(1.5);
+    const device = { getData: () => ({ unitId: 'unit-1' }), getSetting };
+    const run = (id: string, args: Record<string, unknown> = {}) => (
+      cards.get(id).registerRunListener.firstCall.args[0]({ device, ...args })
+    );
+    await expect(run('set_supply_air_setpoint_mode', { mode: 'high', temperature: 19 }))
+      .rejects.toThrow('Mode must be home or away.');
+    await expect(run('set_free_cooling_dt', { threshold: 'stop', kelvin: 1.5 }))
+      .rejects.toThrow('must be lower than the start temperature difference');
+    await expect(run('set_free_cooling_dt', { threshold: 'sideways', kelvin: 1 }))
+      .rejects.toThrow('Threshold must be start or stop.');
+    expect(registryStub.setTemperatureSetpoint.called).toBe(false);
+    expect(registryStub.setFreeCoolingDtStop.called).toBe(false);
   });
 
   it('returns ventilation mode widget status for the selected Homey device', () => {

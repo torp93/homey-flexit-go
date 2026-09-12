@@ -19,6 +19,7 @@ class MockHomeyApp {
         }),
         getDeviceTriggerCard: sinon.stub().returns({
           trigger: sinon.stub().resolves(),
+          registerRunListener: sinon.stub(),
         }),
       },
     };
@@ -42,6 +43,7 @@ function createRegistryStub(overrides: Record<string, any> = {}) {
     setHeatingCoilEnabled: sinon.stub().resolves(),
     toggleHeatingCoilEnabled: sinon.stub().resolves(true),
     getHeatingCoilEnabled: sinon.stub().resolves(true),
+    setUnitEventHandler: sinon.stub(),
     ...overrides,
   };
 }

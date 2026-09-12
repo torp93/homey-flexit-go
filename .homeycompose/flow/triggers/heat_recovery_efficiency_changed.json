@@ -1,0 +1,27 @@
+{
+  "title": {
+    "en": "Heat recovery efficiency changed"
+  },
+  "titleFormatted": {
+    "en": "Heat recovery efficiency changed"
+  },
+  "hint": {
+    "en": "Triggers when the heat recovery efficiency changes by at least 1 %."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "efficiency",
+      "type": "number",
+      "title": {
+        "en": "Efficiency"
+      }
+    }
+  ]
+}

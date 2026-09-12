@@ -1,0 +1,14 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Electric heater operating hours"
+  },
+  "units": {
+    "en": "h"
+  },
+  "decimals": 0,
+  "getable": true,
+  "setable": false,
+  "uiComponent": null,
+  "insights": true
+}

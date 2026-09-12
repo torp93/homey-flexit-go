@@ -367,12 +367,12 @@ describe('UnitRegistry fake-unit e2e', { timeout: 10000 }, () => {
 
     (registry as any).pollUnit('test_unit');
     await waitFor(() => (
-      device.setCapabilityValue.getCalls().some((call: any) => call.args[0] === 'measure_hepa_filter')
+      device.setCapabilityValue.getCalls().some((call: any) => call.args[0] === 'measure_filter_life_percent')
     ));
 
     const filterLifeCalls = device.setCapabilityValue
       .getCalls()
-      .filter((call: any) => call.args[0] === 'measure_hepa_filter');
+      .filter((call: any) => call.args[0] === 'measure_filter_life_percent');
 
     expect(filterLifeCalls.length).toBeGreaterThan(0);
     const last = filterLifeCalls[filterLifeCalls.length - 1];
@@ -921,6 +921,110 @@ describe('UnitRegistry fake-unit e2e', { timeout: 10000 }, () => {
     await waitForDeicingActive(true);
     state.setDeicingRequests({ fan: false });
     await waitForDeicingActive(false);
+  });
+
+  it('publishes heat recovery and heating coil readings from the unit', async () => {
+    const device = makeMockDevice(SERVER_BIND_ADDRESS, serverPort, 4380);
+    registry.register('test_unit', device);
+
+    await waitFor(() => {
+      (registry as any).pollUnit('test_unit');
+      return device.setCapabilityValue.getCalls().some((call: any) => (
+        call.args[0] === 'measure_heat_recovery_efficiency'
+      ));
+    });
+
+    const lastValue = (capability: string) => device.setCapabilityValue.getCalls()
+      .filter((call: any) => call.args[0] === capability)
+      .pop()?.args[1];
+    expect(lastValue('measure_heat_recovery_efficiency')).toBeCloseTo(60.27, 1);
+    expect(lastValue('measure_heating_coil_demand_percent')).toBeCloseTo(34.09, 1);
+    expect(lastValue('measure_supply_air_setpoint_present')).toBeCloseTo(19.5, 1);
+    expect(lastValue('measure_unit_uptime')).toBe(153);
+    expect(typeof lastValue('measure_heat_exchanger_percent')).toBe('number');
+    expect(typeof lastValue('measure_heating_coil_output_percent')).toBe('number');
+  });
+
+  it('syncs supplementary heating, compensation, operating hours and unit status from the unit', async () => {
+    const device = makeMockDevice(SERVER_BIND_ADDRESS, serverPort, 4380);
+    registry.register('test_unit', device);
+
+    await waitFor(() => {
+      (registry as any).pollUnit('test_unit');
+      return device.getSetting('runtime_total_hours') === '29232 h';
+    });
+
+    expect(device.getSetting('runtime_electric_heater_hours')).toBe('9924 h');
+    expect(device.getSetting('runtime_home_hours')).toBe('24168 h');
+    expect(device.getSetting('minimum_fan_speed')).toBe('30 %');
+    expect(device.getSetting('heating_coil_nominal_power')).toBe('0.8 kW');
+    expect(device.getSetting('active_alarms')).toBe('None');
+    expect(device.getSetting('winter_compensation_k')).toBe(2);
+    expect(device.getSetting('winter_compensation_end_c')).toBe(-15);
+    expect(device.getSetting('summer_compensation_end_c')).toBe(28);
+    expect(device.getSetting('heating_neutral_zone_home_k')).toBe(1);
+    expect(device.getSetting('heating_coil_enabled')).toBe(true);
+  });
+
+  it('writes supplementary heating and compensation settings with priority 13', async () => {
+    const device = makeMockDevice(SERVER_BIND_ADDRESS, serverPort, 4380);
+    registry.register('test_unit', device);
+    await waitFor(() => device.setCapabilityValue.called);
+
+    await registry.setUnitNumericSetting('test_unit', 'heating_neutral_zone_away_k', 3.5);
+    await registry.setUnitNumericSetting('test_unit', 'winter_compensation_start_c', -6);
+    await registry.setUnitNumericSetting('test_unit', 'summer_compensation_k', -2);
+
+    const expectedWrites: Array<[number, number]> = [[1987, 3.5], [106, -6], [79, -2]];
+    for (const [instance, value] of expectedWrites) {
+      const current = state.readPresentValue(OBJECT_TYPE.ANALOG_VALUE, instance, PROPERTY_ID.PRESENT_VALUE);
+      expect(current.ok, `AV ${instance} readable`).toBe(true);
+      expect(current.value.value).toBeCloseTo(value, 2);
+      const priority13Write = writePresentValueSpy.getCalls().find((call: any) => (
+        call.args[0] === OBJECT_TYPE.ANALOG_VALUE
+        && call.args[1] === instance
+        && call.args[2] === PROPERTY_ID.PRESENT_VALUE
+        && call.args[4] === 13
+      ));
+      expect(priority13Write, `AV ${instance} written with priority 13`).not.toBe(undefined);
+    }
+    expect(device.getSetting('heating_neutral_zone_away_k')).toBe(3.5);
+    expect(device.getSetting('winter_compensation_start_c')).toBe(-6);
+    expect(device.getSetting('summer_compensation_k')).toBe(-2);
+  });
+
+  it('raises and clears alarms reported by the unit', async () => {
+    registry.destroy();
+    registry = new UnitRegistry({
+      getBacnetClient: getBacnetClientStub,
+      discoverFlexitUnits: discoverFlexitUnitsStub,
+      slowPollIntervalMs: 0,
+    });
+    const device = makeMockDevice(SERVER_BIND_ADDRESS, serverPort, 4380);
+    const events: any[] = [];
+    registry.setUnitEventHandler((event: any) => events.push(event));
+    registry.register('test_unit', device);
+
+    await waitFor(() => {
+      (registry as any).pollUnit('test_unit');
+      return device.getSetting('active_alarms') === 'None';
+    });
+
+    (state as any).setSimulatedPoint('alarm_522', 1);
+    await waitFor(() => {
+      (registry as any).pollUnit('test_unit');
+      return events.some((event) => event.type === 'alarm_raised');
+    });
+    expect(events.find((event) => event.type === 'alarm_raised').tokens)
+      .toEqual({ alarm: 'Air filter polluted', code: '1020' });
+    await waitFor(() => device.getSetting('active_alarms') === 'Air filter polluted (1020)');
+
+    (state as any).setSimulatedPoint('alarm_522', 0);
+    await waitFor(() => {
+      (registry as any).pollUnit('test_unit');
+      return events.some((event) => event.type === 'alarm_cleared');
+    });
+    await waitFor(() => device.getSetting('active_alarms') === 'None');
   });
 
   it('does not re-trigger fireplace when fireplace is already active', async () => {

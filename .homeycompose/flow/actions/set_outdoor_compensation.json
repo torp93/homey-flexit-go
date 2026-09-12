@@ -1,0 +1,73 @@
+{
+  "title": {
+    "en": "Set outdoor temperature compensation"
+  },
+  "titleFormatted": {
+    "en": "Set [[setting]] to [[value]]"
+  },
+  "hint": {
+    "en": "Updates one outdoor temperature compensation value. Compensation is -10 to 10 K, winter temperatures -40 to 10 °C and summer temperatures 0 to 40 °C."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    },
+    {
+      "name": "setting",
+      "type": "dropdown",
+      "title": {
+        "en": "Value"
+      },
+      "values": [
+        {
+          "id": "winter_compensation_k",
+          "label": {
+            "en": "Winter compensation (K)"
+          }
+        },
+        {
+          "id": "winter_compensation_start_c",
+          "label": {
+            "en": "Winter start temperature (°C)"
+          }
+        },
+        {
+          "id": "winter_compensation_end_c",
+          "label": {
+            "en": "Winter end temperature (°C)"
+          }
+        },
+        {
+          "id": "summer_compensation_k",
+          "label": {
+            "en": "Summer compensation (K)"
+          }
+        },
+        {
+          "id": "summer_compensation_start_c",
+          "label": {
+            "en": "Summer start temperature (°C)"
+          }
+        },
+        {
+          "id": "summer_compensation_end_c",
+          "label": {
+            "en": "Summer end temperature (°C)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "value",
+      "type": "number",
+      "title": {
+        "en": "Value"
+      },
+      "min": -40,
+      "max": 40,
+      "step": 0.5
+    }
+  ]
+}

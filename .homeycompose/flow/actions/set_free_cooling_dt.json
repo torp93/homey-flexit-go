@@ -1,0 +1,49 @@
+{
+  "title": {
+    "en": "Set free cooling temperature difference"
+  },
+  "titleFormatted": {
+    "en": "Set free cooling [[threshold]] difference to [[kelvin]] K"
+  },
+  "hint": {
+    "en": "Updates when free cooling starts or stops, as the difference between extract and outdoor air. The stop difference must stay below the start difference."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    },
+    {
+      "name": "threshold",
+      "type": "dropdown",
+      "title": {
+        "en": "Threshold"
+      },
+      "values": [
+        {
+          "id": "start",
+          "label": {
+            "en": "start"
+          }
+        },
+        {
+          "id": "stop",
+          "label": {
+            "en": "stop"
+          }
+        }
+      ]
+    },
+    {
+      "name": "kelvin",
+      "type": "number",
+      "title": {
+        "en": "Difference"
+      },
+      "min": 0,
+      "max": 10,
+      "step": 0.5
+    }
+  ]
+}

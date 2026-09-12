@@ -1,0 +1,28 @@
+{
+  "title": {
+    "en": "Filter life is below a level"
+  },
+  "titleFormatted": {
+    "en": "Filter life is below [[percent]] %"
+  },
+  "hint": {
+    "en": "Checks whether the remaining filter life is below the chosen level."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    },
+    {
+      "name": "percent",
+      "type": "number",
+      "title": {
+        "en": "Level"
+      },
+      "min": 1,
+      "max": 100,
+      "step": 1
+    }
+  ]
+}

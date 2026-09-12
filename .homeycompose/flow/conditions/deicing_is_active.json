@@ -1,0 +1,18 @@
+{
+  "title": {
+    "en": "De-icing is active"
+  },
+  "titleFormatted": {
+    "en": "De-icing is active"
+  },
+  "hint": {
+    "en": "Checks whether the unit is de-icing the heat exchanger right now."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ]
+}

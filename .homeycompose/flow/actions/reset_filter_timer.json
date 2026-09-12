@@ -1,0 +1,18 @@
+{
+  "title": {
+    "en": "Reset filter timer"
+  },
+  "titleFormatted": {
+    "en": "Reset filter timer"
+  },
+  "hint": {
+    "en": "Resets the filter operating time on the unit after the filters are replaced."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ]
+}

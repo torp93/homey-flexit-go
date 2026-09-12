@@ -1,0 +1,27 @@
+{
+  "title": {
+    "en": "Heating coil output changed"
+  },
+  "titleFormatted": {
+    "en": "Heating coil output changed"
+  },
+  "hint": {
+    "en": "Triggers when the electric heating coil output changes by at least 1 %."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "output",
+      "type": "number",
+      "title": {
+        "en": "Output"
+      }
+    }
+  ]
+}

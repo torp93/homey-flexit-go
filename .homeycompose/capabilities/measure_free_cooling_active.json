@@ -1,0 +1,13 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Free cooling active (0/1)"
+  },
+  "decimals": 0,
+  "getable": true,
+  "setable": false,
+  "uiComponent": null,
+  "insights": true,
+  "min": 0,
+  "max": 1
+}

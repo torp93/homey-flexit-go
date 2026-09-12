@@ -411,7 +411,8 @@ describe('Cloud transport – UnitRegistry integration', () => {
     expect(mock.capabilityValues['measure_temperature.outdoor']).toBe(5.2);
     expect(mock.capabilityValues['measure_temperature.exhaust']).toBe(22.0);
     expect(mock.capabilityValues['measure_temperature.extract']).toBe(23.1);
-    expect(mock.capabilityValues['measure_humidity']).toBe(45);
+    // Extract air humidity is no longer published: Nordic units without the sensor always reported nothing.
+    expect(mock.capabilityValues['measure_humidity']).toBe(undefined);
     expect(mock.capabilityValues['measure_motor_rpm']).toBe(1200);
     expect(mock.capabilityValues['measure_motor_rpm.extract']).toBe(1180);
     expect(mock.capabilityValues['measure_fan_speed_percent']).toBe(75);
@@ -1015,6 +1016,32 @@ describe('Cloud transport – UnitRegistry integration', () => {
     expect(settingsCalls.some((value: any) => value?.deicing_off_time_ramp_end_temperature === '-9 °C')).toBe(true);
   });
 
+  it('publishes unit readings, unit settings and alarms from cloud data', async () => {
+    const client = makeMockCloudClient({
+      sensorValues: [
+        ...defaultSensorValues(),
+        { type: OBJ.ANALOG_VALUE, instance: 2023, value: 61 }, // heat recovery efficiency
+        { type: OBJ.ANALOG_OUTPUT, instance: 0, value: 22 }, // heat exchanger speed
+        { type: OBJ.ANALOG_VALUE, instance: 1921, value: 2.5 }, // heating coil neutral zone HOME
+        { type: OBJ.ANALOG_VALUE, instance: 107, value: 2 }, // winter compensation
+        { type: OBJ.ANALOG_VALUE, instance: 1847, value: 29232 }, // total operating hours
+        { type: OBJ.BINARY_VALUE, instance: 522, value: 1 }, // air filter polluted
+      ],
+    });
+    registry.registerCloud(UNIT_ID, mock.device, { plantId: PLANT_ID, client });
+    await sleep(100);
+
+    expect(mock.capabilityValues['measure_heat_recovery_efficiency']).toBe(61);
+    expect(mock.capabilityValues['measure_heat_exchanger_percent']).toBe(22);
+    expect(mock.capabilityValues['unit_alarm_active']).toBe(true);
+    expect(mock.capabilityValues['measure_unit_alarm_active']).toBe(1);
+    const settingsCalls = mock.setSettings.getCalls().map((call: any) => call.args[0]);
+    expect(settingsCalls.some((value: any) => value?.heating_neutral_zone_home_k === 2.5)).toBe(true);
+    expect(settingsCalls.some((value: any) => value?.winter_compensation_k === 2)).toBe(true);
+    expect(settingsCalls.some((value: any) => value?.runtime_total_hours === '29232 h')).toBe(true);
+    expect(settingsCalls.some((value: any) => value?.active_alarms === 'Air filter polluted (1020)')).toBe(true);
+  });
+
   it('computes filter life correctly from cloud data', async () => {
     registry.registerCloud(UNIT_ID, mock.device, {
       plantId: PLANT_ID,
@@ -1024,7 +1051,7 @@ describe('Cloud transport – UnitRegistry integration', () => {
 
     // filter_time = 1000, filter_limit = 4392
     // life = (1 - 1000/4392) * 100 ≈ 77.2%
-    const filterLife = mock.capabilityValues['measure_hepa_filter'];
+    const filterLife = mock.capabilityValues['measure_filter_life_percent'];
     expect(filterLife).to.be.a('number');
     expect(filterLife).toBeCloseTo(77.2, 0.5);
   });

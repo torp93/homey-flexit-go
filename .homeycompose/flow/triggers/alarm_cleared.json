@@ -1,0 +1,34 @@
+{
+  "title": {
+    "en": "Alarm cleared"
+  },
+  "titleFormatted": {
+    "en": "Alarm cleared"
+  },
+  "hint": {
+    "en": "Triggers when an alarm on the unit is no longer active. The unit is checked about once a minute."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "alarm",
+      "type": "string",
+      "title": {
+        "en": "Alarm"
+      }
+    },
+    {
+      "name": "code",
+      "type": "string",
+      "title": {
+        "en": "Alarm code"
+      }
+    }
+  ]
+}

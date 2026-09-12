@@ -1,4 +1,5 @@
 import { createRequire } from 'module';
+import { SERVICE_POINT_SPECS } from './servicePoints';
 
 const require = createRequire(import.meta.url);
 const Bacnet = require('bacstack');
@@ -834,6 +835,9 @@ export const SUPPORTED_POINTS: SupportedPoint[] = [
     'Cooker hood active',
     { min: 0, max: 1, requiresPriority13: true },
   ),
+  ...SERVICE_POINT_SPECS.map((spec) => point(
+    spec.key, spec.typeName, spec.instance, spec.kind, spec.access, 'observed', spec.description, spec.opts,
+  )),
 ];
 
 const dedup = new Map<string, SupportedPoint>();
@@ -982,6 +986,9 @@ export const DEFAULT_POINT_VALUES: Record<string, number> = {
   [key('ANALOG_VALUE', 2125)]: MODE_RF_VALUES.home,
   [key('BINARY_VALUE', 574)]: 0,
   [key('BINARY_VALUE', 402)]: 0,
+  ...Object.fromEntries(SERVICE_POINT_SPECS
+    .filter((spec) => spec.value !== undefined)
+    .map((spec) => [key(spec.typeName, spec.instance), spec.value as number])),
 };
 
 export interface DevicePropertyDefinition {

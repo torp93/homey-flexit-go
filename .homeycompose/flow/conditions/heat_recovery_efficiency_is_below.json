@@ -1,0 +1,28 @@
+{
+  "title": {
+    "en": "Heat recovery efficiency is below a level"
+  },
+  "titleFormatted": {
+    "en": "Heat recovery efficiency is below [[percent]] %"
+  },
+  "hint": {
+    "en": "Checks whether the heat recovery efficiency is below the chosen level."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    },
+    {
+      "name": "percent",
+      "type": "number",
+      "title": {
+        "en": "Level"
+      },
+      "min": 1,
+      "max": 100,
+      "step": 1
+    }
+  ]
+}

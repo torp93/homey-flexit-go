@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import sinon from 'sinon';
 import { findStructuredLog } from './logging_test_utils';
+import { OBSOLETE_CAPABILITIES, REQUIRED_CAPABILITIES } from '../lib/capabilityMigration.ts';
 
 const EXHAUST_TEMP_CAPABILITY = 'measure_temperature.exhaust';
 const DEHUMIDIFICATION_ACTIVE_CAPABILITY = 'dehumidification_active';
@@ -58,6 +59,8 @@ describe('Nordic device', () => {
       setDeicingRotorSpeedPercent: sinon.stub().resolves(),
       setDeicingSupplyFanPercent: sinon.stub().resolves(),
       setDeicingExhaustFanPercent: sinon.stub().resolves(),
+      setHeatingCoilEnabled: sinon.stub().resolves(),
+      setUnitNumericSetting: sinon.stub().resolves(),
     };
 
     const unitRegistryModuleStub = {
@@ -299,17 +302,7 @@ describe('Nordic device', () => {
   const ORDERED_CAPABILITIES = [
     'measure_temperature',
     'measure_temperature.outdoor',
-    EXHAUST_TEMP_CAPABILITY,
-    'measure_temperature.extract',
-    'measure_temperature.supply',
-    DEHUMIDIFICATION_ACTIVE_CAPABILITY,
-    FREE_COOLING_ACTIVE_CAPABILITY,
-    RESET_FILTER_CAPABILITY,
-    'measure_fan_setpoint_percent',
-    'measure_fan_setpoint_percent.extract',
-    'ventilation_stopped',
-    'measure_humidity',
-    'deicing_active',
+    ...REQUIRED_CAPABILITIES,
   ];
 
   it('rebuilds every capability in manifest order when a later capability sits out of place', async () => {
@@ -363,7 +356,7 @@ describe('Nordic device', () => {
     const list = useCapabilityList(device, outOfOrder, ORDERED_CAPABILITIES);
     const addCapability = device.addCapability;
     device.addCapability = sinon.stub().callsFake(async (capability: string) => {
-      if (capability === 'measure_humidity') throw new Error('add failed');
+      if (capability === 'deicing_active') throw new Error('add failed');
       return addCapability(capability);
     });
 
@@ -371,7 +364,18 @@ describe('Nordic device', () => {
 
     expect(list.store.capabilityOrderAttempt).toBe(undefined);
     const failureLog = findStructuredLog(device.error, 'device.capability.order.add.failed');
-    expect(failureLog?.capability).toBe('measure_humidity');
+    expect(failureLog?.capability).toBe('deicing_active');
+  });
+
+  it('removes obsolete capabilities before rebuilding the capability order', async () => {
+    const device = new DeviceClass();
+    const list = useCapabilityList(device, [...ORDERED_CAPABILITIES, ...OBSOLETE_CAPABILITIES], ORDERED_CAPABILITIES);
+
+    await device.onInit();
+
+    expect(list.order()).toEqual(ORDERED_CAPABILITIES);
+    expect([...list.removed].sort()).toEqual([...OBSOLETE_CAPABILITIES].sort());
+    expect(findStructuredLog(device.log, 'device.capability.removed')?.capability).toBe(OBSOLETE_CAPABILITIES[0]);
   });
 
   it('registers capability listeners and forwards updates to registry', async () => {
@@ -889,6 +893,61 @@ describe('Nordic device', () => {
     expect(registryStub.setFreeCoolingDtStart.called).toBe(false);
     expect(registryStub.setFreeCoolingDtStop.called).toBe(false);
     expect(registryStub.setDeicingEnabled.called).toBe(false);
+  });
+
+  it('writes supplementary heating and outdoor compensation settings through the shared settings handler', async () => {
+    const device = new DeviceClass();
+    device.getSetting.withArgs('heating_coil_enabled').returns(true);
+    device.getSetting.withArgs('winter_compensation_start_c').returns(-5);
+    device.getSetting.withArgs('winter_compensation_end_c').returns(-15);
+    await device.onInit();
+
+    await device.onSettings({
+      newSettings: {
+        heating_coil_enabled: false,
+        heating_neutral_zone_home_k: 3.26,
+        winter_compensation_end_c: -12.2,
+        summer_compensation_k: -2,
+      },
+      changedKeys: [
+        'heating_coil_enabled',
+        'heating_neutral_zone_home_k',
+        'winter_compensation_end_c',
+        'summer_compensation_k',
+      ],
+    });
+
+    expect(registryStub.setHeatingCoilEnabled.calledOnceWithExactly('test_unit', false)).toBe(true);
+    expect(registryStub.setUnitNumericSetting.calledWithExactly('test_unit', 'heating_neutral_zone_home_k', 3.5))
+      .toBe(true);
+    expect(registryStub.setUnitNumericSetting.calledWithExactly('test_unit', 'winter_compensation_end_c', -12))
+      .toBe(true);
+    expect(registryStub.setUnitNumericSetting.calledWithExactly('test_unit', 'summer_compensation_k', -2)).toBe(true);
+    expect(registryStub.setUnitNumericSetting.callCount).toBe(3);
+  });
+
+  it('rejects inverted outdoor compensation temperatures before writing anything', async () => {
+    const device = new DeviceClass();
+    device.getSetting.withArgs('winter_compensation_start_c').returns(-5);
+    device.getSetting.withArgs('summer_compensation_start_c').returns(20);
+    await device.onInit();
+
+    const settingsError = async (newSettings: Record<string, unknown>) => {
+      try {
+        await device.onSettings({ newSettings, changedKeys: Object.keys(newSettings) });
+      } catch (error) {
+        return error as Error;
+      }
+      return null;
+    };
+
+    expect((await settingsError({ winter_compensation_end_c: -5 }))?.message)
+      .toBe('The winter compensation end temperature must be below the start temperature.');
+    expect((await settingsError({ summer_compensation_end_c: 18, heating_coil_enabled: false }))?.message)
+      .toBe('The summer compensation end temperature must be above the start temperature.');
+    expect((await settingsError({ winter_compensation_k: 11 }))?.message).toContain('between -10 and 10 K');
+    expect(registryStub.setUnitNumericSetting.called).toBe(false);
+    expect(registryStub.setHeatingCoilEnabled.called).toBe(false);
   });
 
   it('ignores read-only label settings when settings change', async () => {

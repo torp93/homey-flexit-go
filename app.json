@@ -50,6 +50,76 @@
     "triggers": [
       {
         "title": {
+          "en": "Alarm cleared"
+        },
+        "titleFormatted": {
+          "en": "Alarm cleared"
+        },
+        "hint": {
+          "en": "Triggers when an alarm on the unit is no longer active. The unit is checked about once a minute."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "alarm",
+            "type": "string",
+            "title": {
+              "en": "Alarm"
+            }
+          },
+          {
+            "name": "code",
+            "type": "string",
+            "title": {
+              "en": "Alarm code"
+            }
+          }
+        ],
+        "id": "alarm_cleared"
+      },
+      {
+        "title": {
+          "en": "Alarm raised"
+        },
+        "titleFormatted": {
+          "en": "Alarm raised"
+        },
+        "hint": {
+          "en": "Triggers when the unit raises an alarm, such as a polluted air filter. The unit is checked about once a minute."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "alarm",
+            "type": "string",
+            "title": {
+              "en": "Alarm"
+            }
+          },
+          {
+            "name": "code",
+            "type": "string",
+            "title": {
+              "en": "Alarm code"
+            }
+          }
+        ],
+        "id": "alarm_raised"
+      },
+      {
+        "title": {
           "en": "Dehumidification activated"
         },
         "titleFormatted": {
@@ -88,6 +158,44 @@
       },
       {
         "title": {
+          "en": "De-icing started"
+        },
+        "titleFormatted": {
+          "en": "De-icing started"
+        },
+        "hint": {
+          "en": "Triggers when the unit starts de-icing the heat exchanger."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "id": "deicing_started"
+      },
+      {
+        "title": {
+          "en": "De-icing stopped"
+        },
+        "titleFormatted": {
+          "en": "De-icing stopped"
+        },
+        "hint": {
+          "en": "Triggers when the unit stops de-icing the heat exchanger."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "id": "deicing_stopped"
+      },
+      {
+        "title": {
           "en": "Extract fan setpoint changed"
         },
         "titleFormatted": {
@@ -113,6 +221,72 @@
           }
         ],
         "id": "extract_fan_setpoint_changed"
+      },
+      {
+        "title": {
+          "en": "Filter life changed"
+        },
+        "titleFormatted": {
+          "en": "Filter life changed"
+        },
+        "hint": {
+          "en": "Triggers when the remaining filter life changes by at least 1 %."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "filter_life",
+            "type": "number",
+            "title": {
+              "en": "Filter life"
+            }
+          }
+        ],
+        "id": "filter_life_changed"
+      },
+      {
+        "title": {
+          "en": "Filter life dropped below a level"
+        },
+        "titleFormatted": {
+          "en": "Filter life dropped below [[percent]] %"
+        },
+        "hint": {
+          "en": "Triggers once when the remaining filter life drops below the chosen level."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "percent",
+            "type": "number",
+            "title": {
+              "en": "Level"
+            },
+            "min": 1,
+            "max": 100,
+            "step": 1
+          }
+        ],
+        "tokens": [
+          {
+            "name": "filter_life",
+            "type": "number",
+            "title": {
+              "en": "Filter life"
+            }
+          }
+        ],
+        "id": "filter_life_dropped_below"
       },
       {
         "title": {
@@ -151,6 +325,128 @@
           }
         ],
         "id": "free_cooling_deactivated"
+      },
+      {
+        "title": {
+          "en": "Heat exchanger speed changed"
+        },
+        "titleFormatted": {
+          "en": "Heat exchanger speed changed"
+        },
+        "hint": {
+          "en": "Triggers when the rotary heat exchanger speed changes by at least 1 %."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "speed",
+            "type": "number",
+            "title": {
+              "en": "Speed"
+            }
+          }
+        ],
+        "id": "heat_exchanger_speed_changed"
+      },
+      {
+        "title": {
+          "en": "Heat recovery efficiency changed"
+        },
+        "titleFormatted": {
+          "en": "Heat recovery efficiency changed"
+        },
+        "hint": {
+          "en": "Triggers when the heat recovery efficiency changes by at least 1 %."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "efficiency",
+            "type": "number",
+            "title": {
+              "en": "Efficiency"
+            }
+          }
+        ],
+        "id": "heat_recovery_efficiency_changed"
+      },
+      {
+        "title": {
+          "en": "Heating coil output changed"
+        },
+        "titleFormatted": {
+          "en": "Heating coil output changed"
+        },
+        "hint": {
+          "en": "Triggers when the electric heating coil output changes by at least 1 %."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "output",
+            "type": "number",
+            "title": {
+              "en": "Output"
+            }
+          }
+        ],
+        "id": "heating_coil_output_changed"
+      },
+      {
+        "title": {
+          "en": "Heating coil started heating"
+        },
+        "titleFormatted": {
+          "en": "Heating coil started heating"
+        },
+        "hint": {
+          "en": "Triggers when the electric heating coil output rises above 0 %. This is actual heating, not only the coil being enabled."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "id": "heating_coil_started_heating"
+      },
+      {
+        "title": {
+          "en": "Heating coil stopped heating"
+        },
+        "titleFormatted": {
+          "en": "Heating coil stopped heating"
+        },
+        "hint": {
+          "en": "Triggers when the electric heating coil output drops back to 0 %."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "id": "heating_coil_stopped_heating"
       },
       {
         "title": {
@@ -220,6 +516,34 @@
       },
       {
         "title": {
+          "en": "Unit restarted"
+        },
+        "titleFormatted": {
+          "en": "Unit restarted"
+        },
+        "hint": {
+          "en": "Triggers when the time since the unit started drops, which means the unit restarted."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "uptime_minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes since start"
+            }
+          }
+        ],
+        "id": "unit_restarted"
+      },
+      {
+        "title": {
           "en": "Ventilation resumed"
         },
         "titleFormatted": {
@@ -279,6 +603,54 @@
       },
       {
         "title": {
+          "en": "De-icing is active"
+        },
+        "titleFormatted": {
+          "en": "De-icing is active"
+        },
+        "hint": {
+          "en": "Checks whether the unit is de-icing the heat exchanger right now."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "id": "deicing_is_active"
+      },
+      {
+        "title": {
+          "en": "Filter life is below a level"
+        },
+        "titleFormatted": {
+          "en": "Filter life is below [[percent]] %"
+        },
+        "hint": {
+          "en": "Checks whether the remaining filter life is below the chosen level."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "percent",
+            "type": "number",
+            "title": {
+              "en": "Level"
+            },
+            "min": 1,
+            "max": 100,
+            "step": 1
+          }
+        ],
+        "id": "filter_life_is_below"
+      },
+      {
+        "title": {
           "en": "Free cooling is active"
         },
         "titleFormatted": {
@@ -298,6 +670,54 @@
       },
       {
         "title": {
+          "en": "Heat recovery efficiency is below a level"
+        },
+        "titleFormatted": {
+          "en": "Heat recovery efficiency is below [[percent]] %"
+        },
+        "hint": {
+          "en": "Checks whether the heat recovery efficiency is below the chosen level."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "percent",
+            "type": "number",
+            "title": {
+              "en": "Level"
+            },
+            "min": 1,
+            "max": 100,
+            "step": 1
+          }
+        ],
+        "id": "heat_recovery_efficiency_is_below"
+      },
+      {
+        "title": {
+          "en": "Heating coil is heating"
+        },
+        "titleFormatted": {
+          "en": "Heating coil is heating"
+        },
+        "hint": {
+          "en": "Checks whether the electric heating coil output is above 0 % right now."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "id": "heating_coil_is_heating"
+      },
+      {
+        "title": {
           "en": "Heating coil is turned on"
         },
         "titleFormatted": {
@@ -314,6 +734,25 @@
           }
         ],
         "id": "heating_coil_is_on"
+      },
+      {
+        "title": {
+          "en": "An alarm is active"
+        },
+        "titleFormatted": {
+          "en": "An alarm is active"
+        },
+        "hint": {
+          "en": "Checks whether the unit has an active alarm. The unit is checked about once a minute."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "id": "unit_alarm_is_active"
       },
       {
         "title": {
@@ -354,6 +793,65 @@
           }
         ],
         "id": "activate_temporary_high"
+      },
+      {
+        "title": {
+          "en": "Reset filter timer"
+        },
+        "titleFormatted": {
+          "en": "Reset filter timer"
+        },
+        "hint": {
+          "en": "Resets the filter operating time on the unit after the filters are replaced."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          }
+        ],
+        "id": "reset_filter_timer"
+      },
+      {
+        "title": {
+          "en": "Turn de-icing on or off"
+        },
+        "titleFormatted": {
+          "en": "Turn de-icing [[state]]"
+        },
+        "hint": {
+          "en": "Enables or disables de-icing of the heat exchanger on the unit."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "state",
+            "type": "dropdown",
+            "title": {
+              "en": "State"
+            },
+            "values": [
+              {
+                "id": "on",
+                "label": {
+                  "en": "on"
+                }
+              },
+              {
+                "id": "off",
+                "label": {
+                  "en": "off"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "set_deicing_enabled"
       },
       {
         "title": {
@@ -435,6 +933,35 @@
       },
       {
         "title": {
+          "en": "Set filter change interval"
+        },
+        "titleFormatted": {
+          "en": "Set filter change interval to [[months]] months"
+        },
+        "hint": {
+          "en": "Updates how often the unit asks for new filters."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "months",
+            "type": "number",
+            "title": {
+              "en": "Months"
+            },
+            "min": 3,
+            "max": 12,
+            "step": 1
+          }
+        ],
+        "id": "set_filter_change_interval"
+      },
+      {
+        "title": {
           "en": "Set fireplace duration"
         },
         "titleFormatted": {
@@ -461,6 +988,56 @@
           }
         ],
         "id": "set_fireplace_duration"
+      },
+      {
+        "title": {
+          "en": "Set free cooling temperature difference"
+        },
+        "titleFormatted": {
+          "en": "Set free cooling [[threshold]] difference to [[kelvin]] K"
+        },
+        "hint": {
+          "en": "Updates when free cooling starts or stops, as the difference between extract and outdoor air. The stop difference must stay below the start difference."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "threshold",
+            "type": "dropdown",
+            "title": {
+              "en": "Threshold"
+            },
+            "values": [
+              {
+                "id": "start",
+                "label": {
+                  "en": "start"
+                }
+              },
+              {
+                "id": "stop",
+                "label": {
+                  "en": "stop"
+                }
+              }
+            ]
+          },
+          {
+            "name": "kelvin",
+            "type": "number",
+            "title": {
+              "en": "Difference"
+            },
+            "min": 0,
+            "max": 10,
+            "step": 0.5
+          }
+        ],
+        "id": "set_free_cooling_dt"
       },
       {
         "title": {
@@ -522,6 +1099,56 @@
       },
       {
         "title": {
+          "en": "Set heating coil neutral zone"
+        },
+        "titleFormatted": {
+          "en": "Set [[mode]] heating coil neutral zone to [[kelvin]] K"
+        },
+        "hint": {
+          "en": "The electric heating coil only heats when the supply air is this far below the supply air setpoint."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "en": "Mode"
+            },
+            "values": [
+              {
+                "id": "home",
+                "label": {
+                  "en": "Home"
+                }
+              },
+              {
+                "id": "away",
+                "label": {
+                  "en": "Away"
+                }
+              }
+            ]
+          },
+          {
+            "name": "kelvin",
+            "type": "number",
+            "title": {
+              "en": "Neutral zone"
+            },
+            "min": 0,
+            "max": 10,
+            "step": 0.5
+          }
+        ],
+        "id": "set_heating_neutral_zone"
+      },
+      {
+        "title": {
           "en": "Set high duration"
         },
         "titleFormatted": {
@@ -548,6 +1175,130 @@
           }
         ],
         "id": "set_high_duration"
+      },
+      {
+        "title": {
+          "en": "Set outdoor temperature compensation"
+        },
+        "titleFormatted": {
+          "en": "Set [[setting]] to [[value]]"
+        },
+        "hint": {
+          "en": "Updates one outdoor temperature compensation value. Compensation is -10 to 10 K, winter temperatures -40 to 10 °C and summer temperatures 0 to 40 °C."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "setting",
+            "type": "dropdown",
+            "title": {
+              "en": "Value"
+            },
+            "values": [
+              {
+                "id": "winter_compensation_k",
+                "label": {
+                  "en": "Winter compensation (K)"
+                }
+              },
+              {
+                "id": "winter_compensation_start_c",
+                "label": {
+                  "en": "Winter start temperature (°C)"
+                }
+              },
+              {
+                "id": "winter_compensation_end_c",
+                "label": {
+                  "en": "Winter end temperature (°C)"
+                }
+              },
+              {
+                "id": "summer_compensation_k",
+                "label": {
+                  "en": "Summer compensation (K)"
+                }
+              },
+              {
+                "id": "summer_compensation_start_c",
+                "label": {
+                  "en": "Summer start temperature (°C)"
+                }
+              },
+              {
+                "id": "summer_compensation_end_c",
+                "label": {
+                  "en": "Summer end temperature (°C)"
+                }
+              }
+            ]
+          },
+          {
+            "name": "value",
+            "type": "number",
+            "title": {
+              "en": "Value"
+            },
+            "min": -40,
+            "max": 40,
+            "step": 0.5
+          }
+        ],
+        "id": "set_outdoor_compensation"
+      },
+      {
+        "title": {
+          "en": "Set supply air setpoint for a mode"
+        },
+        "titleFormatted": {
+          "en": "Set [[mode]] supply air setpoint to [[temperature]] °C"
+        },
+        "hint": {
+          "en": "Updates the saved supply air setpoint for Home or Away on the unit."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=nordic|nordic-cloud"
+          },
+          {
+            "name": "mode",
+            "type": "dropdown",
+            "title": {
+              "en": "Mode"
+            },
+            "values": [
+              {
+                "id": "home",
+                "label": {
+                  "en": "Home"
+                }
+              },
+              {
+                "id": "away",
+                "label": {
+                  "en": "Away"
+                }
+              }
+            ]
+          },
+          {
+            "name": "temperature",
+            "type": "number",
+            "title": {
+              "en": "Temperature"
+            },
+            "min": 10,
+            "max": 30,
+            "step": 0.5
+          }
+        ],
+        "id": "set_supply_air_setpoint_mode"
       },
       {
         "title": {
@@ -683,6 +1434,12 @@
         "measure_temperature.extract",
         "target_temperature",
         "measure_temperature.supply",
+        "measure_supply_air_setpoint_present",
+        "measure_heat_recovery_efficiency",
+        "measure_heat_exchanger_percent",
+        "measure_heating_coil_output_percent",
+        "measure_heating_coil_demand_percent",
+        "unit_alarm_active",
         "dehumidification_active",
         "free_cooling_active",
         "measure_power",
@@ -693,18 +1450,19 @@
         "measure_fan_speed_percent.extract",
         "measure_fan_setpoint_percent",
         "measure_fan_setpoint_percent.extract",
-        "measure_hepa_filter",
+        "measure_filter_life_percent",
         "button.reset_filter",
         "ventilation_stopped",
-        "measure_humidity",
-        "deicing_active"
+        "deicing_active",
+        "measure_free_cooling_active",
+        "measure_dehumidification_active",
+        "measure_ventilation_stopped",
+        "measure_deicing_active",
+        "measure_unit_alarm_active",
+        "measure_heating_coil_hours",
+        "measure_unit_uptime"
       ],
       "capabilitiesOptions": {
-        "measure_humidity": {
-          "title": {
-            "en": "Extract air humidity"
-          }
-        },
         "dehumidification_active": {
           "title": {
             "en": "Dehumidification active"
@@ -732,7 +1490,7 @@
         },
         "measure_temperature": {
           "title": {
-            "en": "Supply air temperature"
+            "en": "Supply air temperature (thermostat)"
           }
         },
         "measure_temperature.outdoor": {
@@ -804,15 +1562,6 @@
           "units": {
             "en": "%"
           }
-        },
-        "measure_hepa_filter": {
-          "title": {
-            "en": "Filter Life Remaining"
-          },
-          "units": {
-            "en": "%"
-          },
-          "insights": true
         },
         "button.reset_filter": {
           "maintenanceAction": true,
@@ -938,6 +1687,169 @@
               "value": 18,
               "min": 10,
               "max": 30,
+              "step": 0.5
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Supplementary heating"
+          },
+          "children": [
+            {
+              "id": "heating_coil_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "Electric heating coil"
+              },
+              "hint": {
+                "en": "Allows the electric heating coil to heat the supply air when heat recovery alone is not enough."
+              },
+              "value": true
+            },
+            {
+              "id": "heating_neutral_zone_home_k",
+              "type": "number",
+              "label": {
+                "en": "Heating coil neutral zone, home"
+              },
+              "hint": {
+                "en": "The heating coil only heats when the supply air is this far below the home supply air setpoint."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 2.5,
+              "min": 0,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "heating_neutral_zone_away_k",
+              "type": "number",
+              "label": {
+                "en": "Heating coil neutral zone, away"
+              },
+              "hint": {
+                "en": "The heating coil only heats when the supply air is this far below the away supply air setpoint."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 2.5,
+              "min": 0,
+              "max": 10,
+              "step": 0.5
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Outdoor temperature compensation"
+          },
+          "children": [
+            {
+              "id": "winter_compensation_k",
+              "type": "number",
+              "label": {
+                "en": "Winter compensation"
+              },
+              "hint": {
+                "en": "How much the supply air setpoint is raised in cold weather. It ramps in from the winter start temperature and applies in full at the winter end temperature."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 2,
+              "min": -10,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "winter_compensation_start_c",
+              "type": "number",
+              "label": {
+                "en": "Winter start temperature"
+              },
+              "hint": {
+                "en": "Outdoor temperature where winter compensation starts."
+              },
+              "units": {
+                "en": "degC"
+              },
+              "value": -5,
+              "min": -40,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "winter_compensation_end_c",
+              "type": "number",
+              "label": {
+                "en": "Winter end temperature"
+              },
+              "hint": {
+                "en": "Outdoor temperature where winter compensation applies in full. Must be below the start temperature."
+              },
+              "units": {
+                "en": "degC"
+              },
+              "value": -15,
+              "min": -40,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "summer_compensation_k",
+              "type": "number",
+              "label": {
+                "en": "Summer compensation"
+              },
+              "hint": {
+                "en": "How much the supply air setpoint is shifted in warm weather; a negative value lowers it. It ramps in from the summer start temperature and applies in full at the summer end temperature."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": -3,
+              "min": -10,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "summer_compensation_start_c",
+              "type": "number",
+              "label": {
+                "en": "Summer start temperature"
+              },
+              "hint": {
+                "en": "Outdoor temperature where summer compensation starts."
+              },
+              "units": {
+                "en": "degC"
+              },
+              "value": 20,
+              "min": 0,
+              "max": 40,
+              "step": 0.5
+            },
+            {
+              "id": "summer_compensation_end_c",
+              "type": "number",
+              "label": {
+                "en": "Summer end temperature"
+              },
+              "hint": {
+                "en": "Outdoor temperature where summer compensation applies in full. Must be above the start temperature."
+              },
+              "units": {
+                "en": "degC"
+              },
+              "value": 28,
+              "min": 0,
+              "max": 40,
               "step": 0.5
             }
           ]
@@ -1426,6 +2338,154 @@
         {
           "type": "group",
           "label": {
+            "en": "Unit status"
+          },
+          "children": [
+            {
+              "id": "active_alarms",
+              "type": "label",
+              "label": {
+                "en": "Active alarms"
+              },
+              "hint": {
+                "en": "Alarms the unit reports right now, with the Flexit alarm code. Checked about once a minute. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "minimum_fan_speed",
+              "type": "label",
+              "label": {
+                "en": "Minimum fan speed"
+              },
+              "hint": {
+                "en": "The lowest fan speed the unit allows. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "heating_coil_nominal_power",
+              "type": "label",
+              "label": {
+                "en": "Heating coil nominal power"
+              },
+              "hint": {
+                "en": "Rated power of the electric heating coil. Read-only, reported by the unit."
+              },
+              "value": "-"
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Operating hours"
+          },
+          "children": [
+            {
+              "id": "runtime_total_hours",
+              "type": "label",
+              "label": {
+                "en": "Total"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_stop_hours",
+              "type": "label",
+              "label": {
+                "en": "Stop"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_away_hours",
+              "type": "label",
+              "label": {
+                "en": "Away"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_home_hours",
+              "type": "label",
+              "label": {
+                "en": "Home"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_high_hours",
+              "type": "label",
+              "label": {
+                "en": "High"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_fireplace_hours",
+              "type": "label",
+              "label": {
+                "en": "Fireplace"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_cooker_hood_hours",
+              "type": "label",
+              "label": {
+                "en": "Cooker hood"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_heat_exchanger_hours",
+              "type": "label",
+              "label": {
+                "en": "Heat exchanger"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_electric_heater_hours",
+              "type": "label",
+              "label": {
+                "en": "Electric heater"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
             "en": "Connection settings"
           },
           "children": [
@@ -1489,6 +2549,12 @@
         "measure_temperature.extract",
         "target_temperature",
         "measure_temperature.supply",
+        "measure_supply_air_setpoint_present",
+        "measure_heat_recovery_efficiency",
+        "measure_heat_exchanger_percent",
+        "measure_heating_coil_output_percent",
+        "measure_heating_coil_demand_percent",
+        "unit_alarm_active",
         "dehumidification_active",
         "free_cooling_active",
         "measure_power",
@@ -1499,18 +2565,19 @@
         "measure_fan_speed_percent.extract",
         "measure_fan_setpoint_percent",
         "measure_fan_setpoint_percent.extract",
-        "measure_hepa_filter",
+        "measure_filter_life_percent",
         "button.reset_filter",
         "ventilation_stopped",
-        "measure_humidity",
-        "deicing_active"
+        "deicing_active",
+        "measure_free_cooling_active",
+        "measure_dehumidification_active",
+        "measure_ventilation_stopped",
+        "measure_deicing_active",
+        "measure_unit_alarm_active",
+        "measure_heating_coil_hours",
+        "measure_unit_uptime"
       ],
       "capabilitiesOptions": {
-        "measure_humidity": {
-          "title": {
-            "en": "Extract air humidity"
-          }
-        },
         "dehumidification_active": {
           "title": {
             "en": "Dehumidification active"
@@ -1538,7 +2605,7 @@
         },
         "measure_temperature": {
           "title": {
-            "en": "Supply air temperature"
+            "en": "Supply air temperature (thermostat)"
           }
         },
         "measure_temperature.outdoor": {
@@ -1610,15 +2677,6 @@
           "units": {
             "en": "%"
           }
-        },
-        "measure_hepa_filter": {
-          "title": {
-            "en": "Filter Life Remaining"
-          },
-          "units": {
-            "en": "%"
-          },
-          "insights": true
         },
         "button.reset_filter": {
           "maintenanceAction": true,
@@ -1795,6 +2853,169 @@
         {
           "type": "group",
           "label": {
+            "en": "Supplementary heating"
+          },
+          "children": [
+            {
+              "id": "heating_coil_enabled",
+              "type": "checkbox",
+              "label": {
+                "en": "Electric heating coil"
+              },
+              "hint": {
+                "en": "Allows the electric heating coil to heat the supply air when heat recovery alone is not enough."
+              },
+              "value": true
+            },
+            {
+              "id": "heating_neutral_zone_home_k",
+              "type": "number",
+              "label": {
+                "en": "Heating coil neutral zone, home"
+              },
+              "hint": {
+                "en": "The heating coil only heats when the supply air is this far below the home supply air setpoint."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 2.5,
+              "min": 0,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "heating_neutral_zone_away_k",
+              "type": "number",
+              "label": {
+                "en": "Heating coil neutral zone, away"
+              },
+              "hint": {
+                "en": "The heating coil only heats when the supply air is this far below the away supply air setpoint."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 2.5,
+              "min": 0,
+              "max": 10,
+              "step": 0.5
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Outdoor temperature compensation"
+          },
+          "children": [
+            {
+              "id": "winter_compensation_k",
+              "type": "number",
+              "label": {
+                "en": "Winter compensation"
+              },
+              "hint": {
+                "en": "How much the supply air setpoint is raised in cold weather. It ramps in from the winter start temperature and applies in full at the winter end temperature."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": 2,
+              "min": -10,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "winter_compensation_start_c",
+              "type": "number",
+              "label": {
+                "en": "Winter start temperature"
+              },
+              "hint": {
+                "en": "Outdoor temperature where winter compensation starts."
+              },
+              "units": {
+                "en": "degC"
+              },
+              "value": -5,
+              "min": -40,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "winter_compensation_end_c",
+              "type": "number",
+              "label": {
+                "en": "Winter end temperature"
+              },
+              "hint": {
+                "en": "Outdoor temperature where winter compensation applies in full. Must be below the start temperature."
+              },
+              "units": {
+                "en": "degC"
+              },
+              "value": -15,
+              "min": -40,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "summer_compensation_k",
+              "type": "number",
+              "label": {
+                "en": "Summer compensation"
+              },
+              "hint": {
+                "en": "How much the supply air setpoint is shifted in warm weather; a negative value lowers it. It ramps in from the summer start temperature and applies in full at the summer end temperature."
+              },
+              "units": {
+                "en": "K"
+              },
+              "value": -3,
+              "min": -10,
+              "max": 10,
+              "step": 0.5
+            },
+            {
+              "id": "summer_compensation_start_c",
+              "type": "number",
+              "label": {
+                "en": "Summer start temperature"
+              },
+              "hint": {
+                "en": "Outdoor temperature where summer compensation starts."
+              },
+              "units": {
+                "en": "degC"
+              },
+              "value": 20,
+              "min": 0,
+              "max": 40,
+              "step": 0.5
+            },
+            {
+              "id": "summer_compensation_end_c",
+              "type": "number",
+              "label": {
+                "en": "Summer end temperature"
+              },
+              "hint": {
+                "en": "Outdoor temperature where summer compensation applies in full. Must be above the start temperature."
+              },
+              "units": {
+                "en": "degC"
+              },
+              "value": 28,
+              "min": 0,
+              "max": 40,
+              "step": 0.5
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
             "en": "Free cooling"
           },
           "children": [
@@ -2276,6 +3497,154 @@
         {
           "type": "group",
           "label": {
+            "en": "Unit status"
+          },
+          "children": [
+            {
+              "id": "active_alarms",
+              "type": "label",
+              "label": {
+                "en": "Active alarms"
+              },
+              "hint": {
+                "en": "Alarms the unit reports right now, with the Flexit alarm code. Checked about once a minute. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "minimum_fan_speed",
+              "type": "label",
+              "label": {
+                "en": "Minimum fan speed"
+              },
+              "hint": {
+                "en": "The lowest fan speed the unit allows. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "heating_coil_nominal_power",
+              "type": "label",
+              "label": {
+                "en": "Heating coil nominal power"
+              },
+              "hint": {
+                "en": "Rated power of the electric heating coil. Read-only, reported by the unit."
+              },
+              "value": "-"
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Operating hours"
+          },
+          "children": [
+            {
+              "id": "runtime_total_hours",
+              "type": "label",
+              "label": {
+                "en": "Total"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_stop_hours",
+              "type": "label",
+              "label": {
+                "en": "Stop"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_away_hours",
+              "type": "label",
+              "label": {
+                "en": "Away"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_home_hours",
+              "type": "label",
+              "label": {
+                "en": "Home"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_high_hours",
+              "type": "label",
+              "label": {
+                "en": "High"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_fireplace_hours",
+              "type": "label",
+              "label": {
+                "en": "Fireplace"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_cooker_hood_hours",
+              "type": "label",
+              "label": {
+                "en": "Cooker hood"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_heat_exchanger_hours",
+              "type": "label",
+              "label": {
+                "en": "Heat exchanger"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            },
+            {
+              "id": "runtime_electric_heater_hours",
+              "type": "label",
+              "label": {
+                "en": "Electric heater"
+              },
+              "hint": {
+                "en": "Operating hours counted by the unit. Read-only, reported by the unit."
+              },
+              "value": "-"
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
             "en": "Cloud connection"
           },
           "children": [
@@ -2368,6 +3737,32 @@
         "en": "Free cooling stopped"
       }
     },
+    "measure_dehumidification_active": {
+      "type": "number",
+      "title": {
+        "en": "Dehumidification active (0/1)"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "insights": true,
+      "min": 0,
+      "max": 1
+    },
+    "measure_deicing_active": {
+      "type": "number",
+      "title": {
+        "en": "De-icing active (0/1)"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "insights": true,
+      "min": 0,
+      "max": 1
+    },
     "measure_fan_setpoint_percent": {
       "type": "number",
       "title": {
@@ -2396,6 +3791,103 @@
       "setable": false,
       "insights": true
     },
+    "measure_filter_life_percent": {
+      "type": "number",
+      "title": {
+        "en": "Filter life remaining"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true
+    },
+    "measure_free_cooling_active": {
+      "type": "number",
+      "title": {
+        "en": "Free cooling active (0/1)"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "insights": true,
+      "min": 0,
+      "max": 1
+    },
+    "measure_heat_exchanger_percent": {
+      "type": "number",
+      "title": {
+        "en": "Heat exchanger speed"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true
+    },
+    "measure_heat_recovery_efficiency": {
+      "type": "number",
+      "title": {
+        "en": "Heat recovery efficiency"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true
+    },
+    "measure_heating_coil_demand_percent": {
+      "type": "number",
+      "title": {
+        "en": "Heating coil demand"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true
+    },
+    "measure_heating_coil_hours": {
+      "type": "number",
+      "title": {
+        "en": "Electric heater operating hours"
+      },
+      "units": {
+        "en": "h"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "insights": true
+    },
+    "measure_heating_coil_output_percent": {
+      "type": "number",
+      "title": {
+        "en": "Heating coil output"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true
+    },
     "measure_motor_rpm": {
       "type": "number",
       "title": {
@@ -2409,6 +3901,76 @@
       "getable": true,
       "setable": false,
       "insights": true
+    },
+    "measure_supply_air_setpoint_present": {
+      "type": "number",
+      "title": {
+        "en": "Current supply air target"
+      },
+      "units": {
+        "en": "°C"
+      },
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true
+    },
+    "measure_unit_alarm_active": {
+      "type": "number",
+      "title": {
+        "en": "Alarm active (0/1)"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "insights": true,
+      "min": 0,
+      "max": 1
+    },
+    "measure_unit_uptime": {
+      "type": "number",
+      "title": {
+        "en": "Time since unit start"
+      },
+      "units": {
+        "en": "min"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "insights": true
+    },
+    "measure_ventilation_stopped": {
+      "type": "number",
+      "title": {
+        "en": "Ventilation stopped (0/1)"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": null,
+      "insights": true,
+      "min": 0,
+      "max": 1
+    },
+    "unit_alarm_active": {
+      "type": "boolean",
+      "title": {
+        "en": "Alarm active"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "insightsTitleTrue": {
+        "en": "Alarm raised"
+      },
+      "insightsTitleFalse": {
+        "en": "Alarms cleared"
+      }
     },
     "ventilation_stopped": {
       "type": "boolean",

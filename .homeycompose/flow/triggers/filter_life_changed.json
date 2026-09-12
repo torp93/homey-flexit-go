@@ -1,0 +1,27 @@
+{
+  "title": {
+    "en": "Filter life changed"
+  },
+  "titleFormatted": {
+    "en": "Filter life changed"
+  },
+  "hint": {
+    "en": "Triggers when the remaining filter life changes by at least 1 %."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=nordic|nordic-cloud"
+    }
+  ],
+  "tokens": [
+    {
+      "name": "filter_life",
+      "type": "number",
+      "title": {
+        "en": "Filter life"
+      }
+    }
+  ]
+}
