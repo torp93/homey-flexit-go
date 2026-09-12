@@ -1851,7 +1851,6 @@ describe('UnitRegistry', () => {
 
     const unit = { unitId: 'test_unit', devices: new Set([mockDevice]) };
     const polled = {
-      temperature_control_mode: 1,
       deicing_rotor_start_temperature: 0,
       deicing_fan_start_temperature: -0.02,
       deicing_active_time: 420,
@@ -1863,7 +1862,6 @@ describe('UnitRegistry', () => {
     (registry as any).distributeData(unit, polled);
 
     expect(mockDevice.settings).to.include({
-      temperature_control_mode: 'Extract air (cascade)',
       deicing_rotor_start_temperature: '0 °C',
       deicing_fan_start_temperature: '0 °C',
       deicing_active_time: '420 s',
@@ -1880,12 +1878,8 @@ describe('UnitRegistry', () => {
       .filter((key) => key in polled);
     expect(repeatedLabelKeys).to.deep.equal([]);
 
-    (registry as any).distributeData(unit, { temperature_control_mode: 0, deicing_active_time: 480.4 });
-    expect(mockDevice.settings.temperature_control_mode).to.equal('Supply air');
+    (registry as any).distributeData(unit, { deicing_active_time: 480.4 });
     expect(mockDevice.settings.deicing_active_time).to.equal('480 s');
-
-    (registry as any).distributeData(unit, { temperature_control_mode: 5 });
-    expect(mockDevice.settings.temperature_control_mode).to.equal('Supply air');
   });
 
   it('skips free cooling dT and de-icing writes when the unit already reports the requested value', async () => {

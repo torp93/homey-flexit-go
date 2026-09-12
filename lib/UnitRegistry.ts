@@ -73,7 +73,6 @@ export const DEICING_SUPPLY_FAN_SETTING = 'deicing_supply_fan_percent';
 export const DEICING_EXHAUST_FAN_SETTING = 'deicing_exhaust_fan_percent';
 export const MIN_DEICING_PERCENT = 0;
 export const MAX_DEICING_PERCENT = 100;
-const TEMPERATURE_CONTROL_MODE_SETTING = 'temperature_control_mode';
 type TargetTemperatureMode = 'home' | 'away';
 export const FILTER_CHANGE_INTERVAL_MONTHS_SETTING = 'filter_change_interval_months';
 export const FILTER_CHANGE_INTERVAL_HOURS_LEGACY_SETTING = 'filter_change_interval_hours';
@@ -222,15 +221,6 @@ const HEATING_COIL_OFF = 0;
 const HEATING_COIL_ON = 1;
 const COOKER_HOOD_ON = 1;
 const FREE_COOLING_ACTIVE_MODE_VALUE = 10;
-// BV 403 "Cascade control, sensor selection": which air temperature the setpoints regulate.
-const TEMPERATURE_CONTROL_MODE_VALUES = {
-  SUPPLY_AIR: 0,
-  EXTRACT_AIR_CASCADE: 1,
-};
-const TEMPERATURE_CONTROL_MODE_LABELS: Record<number, string> = {
-  [TEMPERATURE_CONTROL_MODE_VALUES.SUPPLY_AIR]: 'Supply air',
-  [TEMPERATURE_CONTROL_MODE_VALUES.EXTRACT_AIR_CASCADE]: 'Extract air (cascade)',
-};
 
 const BACNET_OBJECTS = {
   comfortButton: { type: OBJECT_TYPE.BINARY_VALUE, instance: 50 },
@@ -247,7 +237,6 @@ const BACNET_OBJECTS = {
   freeCoolingMinOnTime: { type: OBJECT_TYPE.POSITIVE_INTEGER_VALUE, instance: 296 },
   freeCoolingDtStart: { type: OBJECT_TYPE.ANALOG_VALUE, instance: 1936 },
   freeCoolingDtStop: { type: OBJECT_TYPE.ANALOG_VALUE, instance: 1937 },
-  temperatureControlMode: { type: OBJECT_TYPE.BINARY_VALUE, instance: 403 },
   deicingRotorActive: { type: OBJECT_TYPE.BINARY_VALUE, instance: 404 },
   deicingFanActive: { type: OBJECT_TYPE.BINARY_VALUE, instance: 405 },
   deicingEnabled: { type: OBJECT_TYPE.BINARY_VALUE, instance: 406 },
@@ -474,11 +463,6 @@ const DEICING_PERCENT_POINTS: Record<'rotorSpeed' | 'supplyFan' | 'exhaustFan', 
 // Matches what Flexit GO exposes: these are configured on the unit and only displayed here.
 const READ_ONLY_LABEL_POINTS: ReadonlyArray<ReadOnlyLabelPoint> = [
   {
-    objectId: BACNET_OBJECTS.temperatureControlMode,
-    settingKey: TEMPERATURE_CONTROL_MODE_SETTING,
-    format: formatTemperatureControlModeLabel,
-  },
-  {
     objectId: BACNET_OBJECTS.deicingRotorStartTemperature,
     settingKey: 'deicing_rotor_start_temperature',
     format: formatTemperatureLabel,
@@ -626,10 +610,6 @@ function formatTemperatureLabel(value: number): string {
 
 function formatSecondsLabel(value: number): string {
   return `${Math.round(value)} s`;
-}
-
-function formatTemperatureControlModeLabel(value: number): string | undefined {
-  return TEMPERATURE_CONTROL_MODE_LABELS[Math.round(value)];
 }
 
 function resolveFreeCoolingActive(data: Record<string, number>): boolean | undefined {

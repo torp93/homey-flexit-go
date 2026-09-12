@@ -874,7 +874,7 @@ describe('UnitRegistry fake-unit e2e', { timeout: 10000 }, () => {
     expect(device.getSetting('deicing_exhaust_fan_percent')).toBe(60);
   });
 
-  it('syncs de-icing settings, read-only de-icing values and temperature control from the unit', async () => {
+  it('syncs de-icing settings and read-only de-icing values from the unit', async () => {
     const device = makeMockDevice(SERVER_BIND_ADDRESS, serverPort, 4380);
     registry.register('test_unit', device);
 
@@ -883,7 +883,6 @@ describe('UnitRegistry fake-unit e2e', { timeout: 10000 }, () => {
       return device.getSetting('deicing_off_time_ramp_end_temperature') === '-9 °C';
     });
 
-    expect(device.getSetting('temperature_control_mode')).toBe('Extract air (cascade)');
     expect(device.getSetting('deicing_rotor_start_temperature')).toBe('0 °C');
     expect(device.getSetting('deicing_fan_start_temperature')).toBe('0 °C');
     expect(device.getSetting('deicing_active_time')).toBe('420 s');

@@ -897,11 +897,10 @@ describe('Nordic device', () => {
 
     await device.onSettings({
       newSettings: {
-        temperature_control_mode: 'Supply air',
         deicing_active_time: '420 s',
         deicing_off_time_ramp_end_temperature: '-9 °C',
       },
-      changedKeys: ['temperature_control_mode', 'deicing_active_time', 'deicing_off_time_ramp_end_temperature'],
+      changedKeys: ['deicing_active_time', 'deicing_off_time_ramp_end_temperature'],
     });
 
     const calledRegistryMethods = Object.entries(registryStub)

@@ -1000,7 +1000,6 @@ describe('Cloud transport – UnitRegistry integration', () => {
     const client = makeMockCloudClient({
       sensorValues: [
         ...defaultSensorValues(),
-        { type: OBJ.BINARY_VALUE, instance: 403, value: 0 }, // supply air control
         { type: OBJ.BINARY_VALUE, instance: 404, value: 0 }, // de-icing rotor request
         { type: OBJ.BINARY_VALUE, instance: 405, value: 1 }, // de-icing fan request
         { type: OBJ.POSITIVE_INTEGER_VALUE, instance: 272, value: 420 }, // de-icing activation time
@@ -1012,7 +1011,6 @@ describe('Cloud transport – UnitRegistry integration', () => {
 
     expect(mock.capabilityValues['deicing_active']).toBe(true);
     const settingsCalls = mock.setSettings.getCalls().map((call: any) => call.args[0]);
-    expect(settingsCalls.some((value: any) => value?.temperature_control_mode === 'Supply air')).toBe(true);
     expect(settingsCalls.some((value: any) => value?.deicing_active_time === '420 s')).toBe(true);
     expect(settingsCalls.some((value: any) => value?.deicing_off_time_ramp_end_temperature === '-9 °C')).toBe(true);
   });

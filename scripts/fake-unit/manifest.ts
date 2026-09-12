@@ -350,14 +350,12 @@ export const SUPPORTED_POINTS: SupportedPoint[] = [
       requiresPriority13: true,
     },
   ),
-  // Free cooling dT thresholds, temperature control mode and de-icing, as read from a real unit.
+  // Free cooling dT thresholds and de-icing, as read from a real unit.
   // Written two lines per point to stay within the file length limit.
   point('free_cooling_dt_start', 'ANALOG_VALUE', 1936, 'real', 'RW', 'observed',
     'Free cooling, dT B3-B4 start', { min: 0, max: 10, units: 'K', requiresPriority13: true }),
   point('free_cooling_dt_stop', 'ANALOG_VALUE', 1937, 'real', 'RW', 'observed',
     'Free cooling, dT B3-B4 stop', { min: 0, max: 10, units: 'K', requiresPriority13: true }),
-  point('temperature_control_mode', 'BINARY_VALUE', 403, 'enum', 'R', 'observed',
-    'Cascade control, sensor selection (0 supply air, 1 extract air)', { min: 0, max: 1 }),
   point('deicing_rotor_active', 'BINARY_VALUE', 404, 'enum', 'R', 'observed',
     'De-icing, rotor active', { min: 0, max: 1 }),
   point('deicing_fan_active', 'BINARY_VALUE', 405, 'enum', 'R', 'observed',
@@ -931,7 +929,6 @@ export const DEFAULT_POINT_VALUES: Record<string, number> = {
   [key('POSITIVE_INTEGER_VALUE', 296)]: 600,
   [key('ANALOG_VALUE', 1936)]: 1.5,
   [key('ANALOG_VALUE', 1937)]: 0.5,
-  [key('BINARY_VALUE', 403)]: 1,
   [key('BINARY_VALUE', 404)]: 0,
   [key('BINARY_VALUE', 405)]: 0,
   [key('BINARY_VALUE', 406)]: 1,
