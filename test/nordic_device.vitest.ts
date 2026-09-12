@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import sinon from 'sinon';
 import { findStructuredLog } from './logging_test_utils';
-import { OBSOLETE_CAPABILITIES, REQUIRED_CAPABILITIES } from '../lib/capabilityMigration.ts';
+import {
+  CAPABILITY_DEFINITIONS_STORE_KEY,
+  CAPABILITY_DEFINITIONS_VERSION,
+  OBSOLETE_CAPABILITIES,
+  REQUIRED_CAPABILITIES,
+} from '../lib/capabilityMigration.ts';
 
 const EXHAUST_TEMP_CAPABILITY = 'measure_temperature.exhaust';
 const DEHUMIDIFICATION_ACTIVE_CAPABILITY = 'dehumidification_active';
@@ -326,6 +331,7 @@ describe('Nordic device', () => {
   it('leaves capabilities alone when the order already matches the manifest', async () => {
     const device = new DeviceClass();
     const list = useCapabilityList(device, ORDERED_CAPABILITIES, ORDERED_CAPABILITIES);
+    list.store[CAPABILITY_DEFINITIONS_STORE_KEY] = CAPABILITY_DEFINITIONS_VERSION;
 
     await device.onInit();
 
@@ -367,9 +373,26 @@ describe('Nordic device', () => {
     expect(failureLog?.capability).toBe('deicing_active');
   });
 
+  it('rebuilds capabilities once when their definitions changed, even in manifest order', async () => {
+    const device = new DeviceClass();
+    const list = useCapabilityList(device, ORDERED_CAPABILITIES, ORDERED_CAPABILITIES);
+
+    await device.onInit();
+
+    expect(list.removed.length).toBe(ORDERED_CAPABILITIES.length);
+    expect(list.order()).toEqual(ORDERED_CAPABILITIES);
+    expect(list.store[CAPABILITY_DEFINITIONS_STORE_KEY]).toBe(CAPABILITY_DEFINITIONS_VERSION);
+    expect(findStructuredLog(device.log, 'device.capability.order.rebuild')?.reason).toBe('definitions');
+
+    const removedBefore = list.removed.length;
+    await device.onInit();
+    expect(list.removed.length).toBe(removedBefore);
+  });
+
   it('removes obsolete capabilities before rebuilding the capability order', async () => {
     const device = new DeviceClass();
     const list = useCapabilityList(device, [...ORDERED_CAPABILITIES, ...OBSOLETE_CAPABILITIES], ORDERED_CAPABILITIES);
+    list.store[CAPABILITY_DEFINITIONS_STORE_KEY] = CAPABILITY_DEFINITIONS_VERSION;
 
     await device.onInit();
 

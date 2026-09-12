@@ -3,6 +3,7 @@
   "title": {
     "en": "Heat recovery efficiency"
   },
+  "icon": "/assets/capabilities/measure_heat_recovery_efficiency.svg",
   "units": {
     "en": "%"
   },

@@ -1,18 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="24" height="24" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="50" cy="50" r="9" fill="currentColor" stroke="none" />
-  <defs>
-    <g id="snowflake-arm">
-      <line x1="50" y1="41" x2="50" y2="6" />
-      <line x1="50" y1="28" x2="34" y2="12" />
-      <line x1="50" y1="28" x2="66" y2="12" />
-      <line x1="50" y1="16" x2="40" y2="6" />
-      <line x1="50" y1="16" x2="60" y2="6" />
-    </g>
-  </defs>
-  <use href="#snowflake-arm" />
-  <use href="#snowflake-arm" transform="rotate(60 50 50)" />
-  <use href="#snowflake-arm" transform="rotate(120 50 50)" />
-  <use href="#snowflake-arm" transform="rotate(180 50 50)" />
-  <use href="#snowflake-arm" transform="rotate(240 50 50)" />
-  <use href="#snowflake-arm" transform="rotate(300 50 50)" />
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <title>free_cooling_active</title>
+  <g stroke="none" fill="none">
+    <path d="M27,32 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 Z" fill="#000000"/>
+    <path d="M30,29 L34,29 L34,5 L30,5 Z" fill="#000000"/>
+    <path d="M33.2,18.8 L28.25,13.85 L25.85,16.25 L30.8,21.2 Z" fill="#000000"/>
+    <path d="M33.2,21.2 L38.15,16.25 L35.75,13.85 L30.8,18.8 Z" fill="#000000"/>
+    <path d="M33.2,10.8 L28.25,5.85 L25.85,8.25 L30.8,13.2 Z" fill="#000000"/>
+    <path d="M33.2,13.2 L38.15,8.25 L35.75,5.85 L30.8,10.8 Z" fill="#000000"/>
+    <path d="M33.6,28.77 L35.6,32.23 L56.38,20.23 L54.38,16.77 Z" fill="#000000"/>
+    <path d="M44.03,26.44 L45.85,19.68 L42.56,18.8 L40.75,25.56 Z" fill="#000000"/>
+    <path d="M41.95,27.64 L48.71,29.45 L49.59,26.17 L42.83,24.36 Z" fill="#000000"/>
+    <path d="M50.96,22.44 L52.77,15.68 L49.49,14.8 L47.68,21.56 Z" fill="#000000"/>
+    <path d="M48.88,23.64 L55.64,25.45 L56.52,22.17 L49.76,20.36 Z" fill="#000000"/>
+    <path d="M35.6,31.77 L33.6,35.23 L54.38,47.23 L56.38,43.77 Z" fill="#000000"/>
+    <path d="M42.83,39.64 L49.59,37.83 L48.71,34.55 L41.95,36.36 Z" fill="#000000"/>
+    <path d="M40.75,38.44 L42.56,45.2 L45.85,44.32 L44.03,37.56 Z" fill="#000000"/>
+    <path d="M49.76,43.64 L56.52,41.83 L55.64,38.55 L48.88,40.36 Z" fill="#000000"/>
+    <path d="M47.68,42.44 L49.49,49.2 L52.77,48.32 L50.96,41.56 Z" fill="#000000"/>
+    <path d="M34,35 L30,35 L30,59 L34,59 Z" fill="#000000"/>
+    <path d="M30.8,45.2 L35.75,50.15 L38.15,47.75 L33.2,42.8 Z" fill="#000000"/>
+    <path d="M30.8,42.8 L25.85,47.75 L28.25,50.15 L33.2,45.2 Z" fill="#000000"/>
+    <path d="M30.8,53.2 L35.75,58.15 L38.15,55.75 L33.2,50.8 Z" fill="#000000"/>
+    <path d="M30.8,50.8 L25.85,55.75 L28.25,58.15 L33.2,53.2 Z" fill="#000000"/>
+    <path d="M30.4,35.23 L28.4,31.77 L7.62,43.77 L9.62,47.23 Z" fill="#000000"/>
+    <path d="M19.97,37.56 L18.15,44.32 L21.44,45.2 L23.25,38.44 Z" fill="#000000"/>
+    <path d="M22.05,36.36 L15.29,34.55 L14.41,37.83 L21.17,39.64 Z" fill="#000000"/>
+    <path d="M13.04,41.56 L11.23,48.32 L14.51,49.2 L16.32,42.44 Z" fill="#000000"/>
+    <path d="M15.12,40.36 L8.36,38.55 L7.48,41.83 L14.24,43.64 Z" fill="#000000"/>
+    <path d="M28.4,32.23 L30.4,28.77 L9.62,16.77 L7.62,20.23 Z" fill="#000000"/>
+    <path d="M21.17,24.36 L14.41,26.17 L15.29,29.45 L22.05,27.64 Z" fill="#000000"/>
+    <path d="M23.25,25.56 L21.44,18.8 L18.15,19.68 L19.97,26.44 Z" fill="#000000"/>
+    <path d="M14.24,20.36 L7.48,22.17 L8.36,25.45 L15.12,23.64 Z" fill="#000000"/>
+    <path d="M16.32,21.56 L14.51,14.8 L11.23,15.68 L13.04,22.44 Z" fill="#000000"/>
+  </g>
 </svg>

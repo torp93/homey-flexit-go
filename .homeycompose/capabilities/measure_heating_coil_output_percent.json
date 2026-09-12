@@ -3,6 +3,7 @@
   "title": {
     "en": "Heating coil output"
   },
+  "icon": "/assets/capabilities/measure_heating_coil_output_percent.svg",
   "units": {
     "en": "%"
   },

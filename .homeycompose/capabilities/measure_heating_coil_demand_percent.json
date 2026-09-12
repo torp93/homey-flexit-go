@@ -3,6 +3,7 @@
   "title": {
     "en": "Heating coil demand"
   },
+  "icon": "/assets/capabilities/measure_heating_coil_demand_percent.svg",
   "units": {
     "en": "%"
   },

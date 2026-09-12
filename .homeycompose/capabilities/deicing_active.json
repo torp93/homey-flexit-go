@@ -3,6 +3,7 @@
   "title": {
     "en": "De-icing active"
   },
+  "icon": "/assets/capabilities/deicing_active.svg",
   "getable": true,
   "setable": false,
   "uiComponent": "sensor",

@@ -3709,6 +3709,7 @@
       "title": {
         "en": "De-icing active"
       },
+      "icon": "/assets/capabilities/deicing_active.svg",
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
@@ -3796,6 +3797,7 @@
       "title": {
         "en": "Filter life remaining"
       },
+      "icon": "/assets/capabilities/measure_filter_life_percent.svg",
       "units": {
         "en": "%"
       },
@@ -3823,6 +3825,7 @@
       "title": {
         "en": "Heat exchanger speed"
       },
+      "icon": "/assets/capabilities/measure_heat_exchanger_percent.svg",
       "units": {
         "en": "%"
       },
@@ -3837,6 +3840,7 @@
       "title": {
         "en": "Heat recovery efficiency"
       },
+      "icon": "/assets/capabilities/measure_heat_recovery_efficiency.svg",
       "units": {
         "en": "%"
       },
@@ -3851,6 +3855,7 @@
       "title": {
         "en": "Heating coil demand"
       },
+      "icon": "/assets/capabilities/measure_heating_coil_demand_percent.svg",
       "units": {
         "en": "%"
       },
@@ -3879,6 +3884,7 @@
       "title": {
         "en": "Heating coil output"
       },
+      "icon": "/assets/capabilities/measure_heating_coil_output_percent.svg",
       "units": {
         "en": "%"
       },
@@ -3907,6 +3913,7 @@
       "title": {
         "en": "Current supply air target"
       },
+      "icon": "/assets/capabilities/measure_supply_air_setpoint_present.svg",
       "units": {
         "en": "°C"
       },
@@ -3961,6 +3968,7 @@
       "title": {
         "en": "Alarm active"
       },
+      "icon": "/assets/capabilities/unit_alarm_active.svg",
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",

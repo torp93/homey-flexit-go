@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <title>measure_heat_exchanger_percent</title>
+  <g stroke="none" fill="none">
+    <path d="M5,32 a27,27 0 1,0 54,0 a27,27 0 1,0 -54,0 Z M10,32 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0 Z" fill="#000000" fill-rule="evenodd"/>
+    <path d="M26,32 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0 Z" fill="#000000"/>
+    <path d="M37,33.7 L55,33.7 L55,30.3 L37,30.3 Z" fill="#000000"/>
+    <path d="M34.33,36.74 L47.06,49.47 L49.47,47.06 L36.74,34.33 Z" fill="#000000"/>
+    <path d="M30.3,37 L30.3,55 L33.7,55 L33.7,37 Z" fill="#000000"/>
+    <path d="M27.26,34.33 L14.53,47.06 L16.94,49.47 L29.67,36.74 Z" fill="#000000"/>
+    <path d="M27,30.3 L9,30.3 L9,33.7 L27,33.7 Z" fill="#000000"/>
+    <path d="M29.67,27.26 L16.94,14.53 L14.53,16.94 L27.26,29.67 Z" fill="#000000"/>
+    <path d="M33.7,27 L33.7,9 L30.3,9 L30.3,27 Z" fill="#000000"/>
+    <path d="M36.74,29.67 L49.47,16.94 L47.06,14.53 L34.33,27.26 Z" fill="#000000"/>
+  </g>
+</svg>

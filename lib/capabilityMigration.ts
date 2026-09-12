@@ -35,6 +35,14 @@ export const OBSOLETE_CAPABILITIES = ['measure_hepa_filter', 'measure_humidity']
 
 export const CAPABILITY_ORDER_ATTEMPT_STORE_KEY = 'capabilityOrderAttempt';
 
+/**
+ * Bump when capability definitions change in a way existing devices must pick up, such as icons.
+ * Homey snapshots a capability's icon and title when the capability is added to a device, so a
+ * changed definition only reaches an existing device through a rebuild.
+ */
+export const CAPABILITY_DEFINITIONS_VERSION = '2026-09-12-fill-icons';
+export const CAPABILITY_DEFINITIONS_STORE_KEY = 'capabilityDefinitionsVersion';
+
 export interface MigratableDevice {
   hasCapability(capability: string): boolean;
   addCapability(capability: string): Promise<void>;
@@ -121,10 +129,13 @@ async function alignCapabilityOrderToManifest(
   );
   // Membership is reconciled first; if the lists still differ in content, order is not the issue.
   if (wanted.length !== current.length) return;
-  if (wanted.join('|') === current.join('|')) return;
+  const orderMatches = wanted.join('|') === current.join('|');
+  const definitionsCurrent = getStoreValue?.call(device, CAPABILITY_DEFINITIONS_STORE_KEY)
+    === CAPABILITY_DEFINITIONS_VERSION;
+  if (orderMatches && definitionsCurrent) return;
 
   const signature = wanted.join(',');
-  if (getStoreValue?.call(device, CAPABILITY_ORDER_ATTEMPT_STORE_KEY) === signature) {
+  if (definitionsCurrent && getStoreValue?.call(device, CAPABILITY_ORDER_ATTEMPT_STORE_KEY) === signature) {
     logger.info(
       'device.capability.order.skipped',
       'Capability order still differs from the manifest after a rebuild; not retrying',
@@ -133,12 +144,18 @@ async function alignCapabilityOrderToManifest(
     return;
   }
 
-  logger.info('device.capability.order.rebuild', 'Rebuilding capability order', { wanted });
+  // A definitions change (such as new icons) rebuilds once even when the order is already right.
+  logger.info('device.capability.order.rebuild', 'Rebuilding capability order', {
+    wanted,
+    reason: orderMatches ? 'definitions' : 'order',
+  });
   const rebuilt = await rebuildCapabilities({
     removeCapability: removeCapability.bind(device),
     addCapability: device.addCapability.bind(device),
   }, current, wanted, logger);
-  if (rebuilt) await setStoreValue?.call(device, CAPABILITY_ORDER_ATTEMPT_STORE_KEY, signature);
+  if (!rebuilt) return;
+  await setStoreValue?.call(device, CAPABILITY_ORDER_ATTEMPT_STORE_KEY, signature);
+  await setStoreValue?.call(device, CAPABILITY_DEFINITIONS_STORE_KEY, CAPABILITY_DEFINITIONS_VERSION);
 }
 
 /** Adds missing capabilities, removes obsolete ones, then restores the manifest order. */

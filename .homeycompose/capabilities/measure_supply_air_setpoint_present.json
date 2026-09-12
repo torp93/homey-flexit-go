@@ -3,6 +3,7 @@
   "title": {
     "en": "Current supply air target"
   },
+  "icon": "/assets/capabilities/measure_supply_air_setpoint_present.svg",
   "units": {
     "en": "°C"
   },

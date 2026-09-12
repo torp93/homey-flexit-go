@@ -3,6 +3,7 @@
   "title": {
     "en": "Filter life remaining"
   },
+  "icon": "/assets/capabilities/measure_filter_life_percent.svg",
   "units": {
     "en": "%"
   },

@@ -3,6 +3,7 @@
   "title": {
     "en": "Heat exchanger speed"
   },
+  "icon": "/assets/capabilities/measure_heat_exchanger_percent.svg",
   "units": {
     "en": "%"
   },

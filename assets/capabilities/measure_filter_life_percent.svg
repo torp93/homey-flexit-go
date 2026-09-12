@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <title>measure_filter_life_percent</title>
+  <g stroke="none" fill="none">
+    <path d="M10,12 L54,12 L54,52 L10,52 Z M15,17 L49,17 L49,47 L15,47 Z" fill="#000000" fill-rule="evenodd"/>
+    <path d="M16.43,19.3 L21.43,45.3 L24.57,44.7 L19.57,18.7 Z" fill="#000000"/>
+    <path d="M24.43,19.3 L29.43,45.3 L32.57,44.7 L27.57,18.7 Z" fill="#000000"/>
+    <path d="M32.43,19.3 L37.43,45.3 L40.57,44.7 L35.57,18.7 Z" fill="#000000"/>
+    <path d="M24.43,18.7 L19.43,44.7 L22.57,45.3 L27.57,19.3 Z" fill="#000000"/>
+    <path d="M32.43,18.7 L27.43,44.7 L30.57,45.3 L35.57,19.3 Z" fill="#000000"/>
+    <path d="M40.43,18.7 L35.43,44.7 L38.57,45.3 L43.57,19.3 Z" fill="#000000"/>
+  </g>
+</svg>
