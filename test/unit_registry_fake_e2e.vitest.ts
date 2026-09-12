@@ -964,6 +964,7 @@ describe('UnitRegistry fake-unit e2e', { timeout: 10000 }, () => {
     expect(device.getSetting('summer_compensation_end_c')).toBe(28);
     expect(device.getSetting('heating_neutral_zone_home_k')).toBe(1);
     expect(device.getSetting('heating_coil_enabled')).toBe(true);
+    expect(device.getSetting('free_cooling_start_margin_k')).toBe(2);
   });
 
   it('writes supplementary heating and compensation settings with priority 13', async () => {
@@ -974,8 +975,9 @@ describe('UnitRegistry fake-unit e2e', { timeout: 10000 }, () => {
     await registry.setUnitNumericSetting('test_unit', 'heating_neutral_zone_away_k', 3.5);
     await registry.setUnitNumericSetting('test_unit', 'winter_compensation_start_c', -6);
     await registry.setUnitNumericSetting('test_unit', 'summer_compensation_k', -2);
+    await registry.setUnitNumericSetting('test_unit', 'free_cooling_start_margin_k', 0.5);
 
-    const expectedWrites: Array<[number, number]> = [[1987, 3.5], [106, -6], [79, -2]];
+    const expectedWrites: Array<[number, number]> = [[1987, 3.5], [106, -6], [79, -2], [1933, 0.5]];
     for (const [instance, value] of expectedWrites) {
       const current = state.readPresentValue(OBJECT_TYPE.ANALOG_VALUE, instance, PROPERTY_ID.PRESENT_VALUE);
       expect(current.ok, `AV ${instance} readable`).toBe(true);

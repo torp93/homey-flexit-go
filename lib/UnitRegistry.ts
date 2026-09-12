@@ -501,6 +501,8 @@ const UNIT_NUMERIC_SETTING_INSTANCES: Record<string, number> = {
   summer_compensation_k: 79,
   summer_compensation_start_c: 78,
   summer_compensation_end_c: 75,
+  // Free cooling, d B3-setpoint start: hidden in Flexit GO, read 2 K on a real unit.
+  free_cooling_start_margin_k: 1933,
 };
 const UNIT_NUMERIC_SETTING_POINTS: ReadonlyArray<AnalogSettingPoint> = UNIT_NUMERIC_SETTINGS.map((setting) => ({
   objectId: { type: OBJECT_TYPE.ANALOG_VALUE, instance: UNIT_NUMERIC_SETTING_INSTANCES[setting.settingKey] },

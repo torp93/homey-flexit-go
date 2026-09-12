@@ -80,6 +80,16 @@ export const UNIT_NUMERIC_SETTINGS: ReadonlyArray<UnitNumericSettingDefinition> 
     max: 40,
     step: 0.5,
   },
+  {
+    // Not shown in Flexit GO. Free cooling only starts once the extract air is this much above
+    // the extract air setpoint (factory value 2 K).
+    settingKey: 'free_cooling_start_margin_k',
+    label: 'Free cooling start margin above setpoint',
+    unit: 'K',
+    min: 0,
+    max: 10,
+    step: 0.5,
+  },
 ];
 
 export interface UnitSettingOrderRule {

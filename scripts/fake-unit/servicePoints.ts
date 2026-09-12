@@ -101,6 +101,7 @@ export const SERVICE_POINT_SPECS: ServicePointSpec[] = [
     min: 0, max: 40, units: 'degC',
   }),
   setting('summer_compensation_end', 75, 'Cooling, setpoint end value shift', 28, { min: 0, max: 40, units: 'degC' }),
+  setting('free_cooling_start_margin', 1933, 'Free cooling, d B3-setpoint start', 2, { min: 0, max: 10, units: 'K' }),
   reading('operating_hours_total', 1847, 'Operating hours, total time', 29232, 'h'),
   reading('operating_hours_stop', 1913, 'Time counter, STOP', 0, 'h'),
   reading('operating_hours_away', 1914, 'Time counter, AWAY', 1712, 'h'),
