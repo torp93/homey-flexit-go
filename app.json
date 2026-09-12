@@ -493,10 +493,10 @@
       },
       {
         "title": {
-          "en": "Set free cooling setpoint"
+          "en": "Set free cooling extract air setpoint"
         },
         "titleFormatted": {
-          "en": "Set free cooling setpoint to [[temperature]] °C"
+          "en": "Set free cooling extract air setpoint to [[temperature]] °C"
         },
         "hint": {
           "en": "Updates the extract air temperature that free cooling works towards. Free cooling can start when the extract air is warmer than this, and stops when it drops below it."
@@ -965,13 +965,16 @@
               "label": {
                 "en": "Enable free cooling"
               },
-              "value": false
+              "value": false,
+              "hint": {
+                "en": "Lets the unit cool the home with outdoor air when it is cooler outside: heat recovery is bypassed and ventilation runs on high. The unit decides when it runs, based on the settings below."
+              }
             },
             {
               "id": "free_cooling_extract_temp_setpoint",
               "type": "number",
               "label": {
-                "en": "Free cooling temperature setpoint"
+                "en": "Extract air setpoint"
               },
               "units": {
                 "en": "degC"
@@ -979,13 +982,16 @@
               "value": 22,
               "min": 10,
               "max": 30,
-              "step": 0.5
+              "step": 0.5,
+              "hint": {
+                "en": "Based on the extract air temperature, the air leaving the rooms. Free cooling can start when the extract air is warmer than this, and stops when the extract air has cooled below it."
+              }
             },
             {
               "id": "free_cooling_outside_temp_limit",
               "type": "number",
               "label": {
-                "en": "Outside temperature limit"
+                "en": "Outdoor temperature limit"
               },
               "units": {
                 "en": "degC"
@@ -993,7 +999,10 @@
               "value": 18,
               "min": 10,
               "max": 30,
-              "step": 0.5
+              "step": 0.5,
+              "hint": {
+                "en": "Free cooling only starts when the outdoor air is warmer than this. It does not stop a free cooling cycle that is already running."
+              }
             },
             {
               "id": "free_cooling_min_on_time_seconds",
@@ -1007,13 +1016,16 @@
               "value": 600,
               "min": 0,
               "max": 18000,
-              "step": 1
+              "step": 1,
+              "hint": {
+                "en": "Once free cooling has started, it runs at least this long before it can stop."
+              }
             },
             {
               "id": "free_cooling_dt_start_k",
               "type": "number",
               "label": {
-                "en": "Start temperature difference"
+                "en": "Start difference, extract vs outdoor"
               },
               "hint": {
                 "en": "Free cooling only starts when the outdoor air is at least this much colder than the extract air."
@@ -1030,7 +1042,7 @@
               "id": "free_cooling_dt_stop_k",
               "type": "number",
               "label": {
-                "en": "Stop temperature difference"
+                "en": "Stop difference, extract vs outdoor"
               },
               "hint": {
                 "en": "Free cooling stops when the difference between extract air and outdoor air drops below this. Must be lower than the start difference."
@@ -1814,13 +1826,16 @@
               "label": {
                 "en": "Enable free cooling"
               },
-              "value": false
+              "value": false,
+              "hint": {
+                "en": "Lets the unit cool the home with outdoor air when it is cooler outside: heat recovery is bypassed and ventilation runs on high. The unit decides when it runs, based on the settings below."
+              }
             },
             {
               "id": "free_cooling_extract_temp_setpoint",
               "type": "number",
               "label": {
-                "en": "Free cooling temperature setpoint"
+                "en": "Extract air setpoint"
               },
               "units": {
                 "en": "degC"
@@ -1828,13 +1843,16 @@
               "value": 22,
               "min": 10,
               "max": 30,
-              "step": 0.5
+              "step": 0.5,
+              "hint": {
+                "en": "Based on the extract air temperature, the air leaving the rooms. Free cooling can start when the extract air is warmer than this, and stops when the extract air has cooled below it."
+              }
             },
             {
               "id": "free_cooling_outside_temp_limit",
               "type": "number",
               "label": {
-                "en": "Outside temperature limit"
+                "en": "Outdoor temperature limit"
               },
               "units": {
                 "en": "degC"
@@ -1842,7 +1860,10 @@
               "value": 18,
               "min": 10,
               "max": 30,
-              "step": 0.5
+              "step": 0.5,
+              "hint": {
+                "en": "Free cooling only starts when the outdoor air is warmer than this. It does not stop a free cooling cycle that is already running."
+              }
             },
             {
               "id": "free_cooling_min_on_time_seconds",
@@ -1856,13 +1877,16 @@
               "value": 600,
               "min": 0,
               "max": 18000,
-              "step": 1
+              "step": 1,
+              "hint": {
+                "en": "Once free cooling has started, it runs at least this long before it can stop."
+              }
             },
             {
               "id": "free_cooling_dt_start_k",
               "type": "number",
               "label": {
-                "en": "Start temperature difference"
+                "en": "Start difference, extract vs outdoor"
               },
               "hint": {
                 "en": "Free cooling only starts when the outdoor air is at least this much colder than the extract air."
@@ -1879,7 +1903,7 @@
               "id": "free_cooling_dt_stop_k",
               "type": "number",
               "label": {
-                "en": "Stop temperature difference"
+                "en": "Stop difference, extract vs outdoor"
               },
               "hint": {
                 "en": "Free cooling stops when the difference between extract air and outdoor air drops below this. Must be lower than the start difference."

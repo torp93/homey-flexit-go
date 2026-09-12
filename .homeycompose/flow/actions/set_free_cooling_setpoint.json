@@ -1,9 +1,9 @@
 {
   "title": {
-    "en": "Set free cooling setpoint"
+    "en": "Set free cooling extract air setpoint"
   },
   "titleFormatted": {
-    "en": "Set free cooling setpoint to [[temperature]] °C"
+    "en": "Set free cooling extract air setpoint to [[temperature]] °C"
   },
   "hint": {
     "en": "Updates the extract air temperature that free cooling works towards. Free cooling can start when the extract air is warmer than this, and stops when it drops below it."
