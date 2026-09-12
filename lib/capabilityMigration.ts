@@ -40,7 +40,7 @@ export const CAPABILITY_ORDER_ATTEMPT_STORE_KEY = 'capabilityOrderAttempt';
  * Homey snapshots a capability's icon and title when the capability is added to a device, so a
  * changed definition only reaches an existing device through a rebuild.
  */
-export const CAPABILITY_DEFINITIONS_VERSION = '2026-09-12-fill-icons';
+export const CAPABILITY_DEFINITIONS_VERSION = '2026-09-12-fill-icons-2';
 export const CAPABILITY_DEFINITIONS_STORE_KEY = 'capabilityDefinitionsVersion';
 
 export interface MigratableDevice {
