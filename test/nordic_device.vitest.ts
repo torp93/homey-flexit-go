@@ -275,6 +275,105 @@ describe('Nordic device', () => {
     expect(registryStub.register.calledOnceWithExactly('test_unit', device)).toBe(true);
   });
 
+  function useCapabilityList(device: any, initial: string[], manifest: string[]) {
+    let order = [...initial];
+    const removed: string[] = [];
+    const store: Record<string, unknown> = {};
+    device.driver = { manifest: { capabilities: manifest } };
+    device.hasCapability = (capability: string) => order.includes(capability);
+    device.getCapabilities = () => [...order];
+    device.removeCapability = async (capability: string) => {
+      removed.push(capability);
+      order = order.filter((existing) => existing !== capability);
+    };
+    device.addCapability = sinon.stub().callsFake(async (capability: string) => {
+      order.push(capability);
+    });
+    device.getStoreValue = (key: string) => store[key];
+    device.setStoreValue = async (key: string, value: unknown) => {
+      store[key] = value;
+    };
+    return { order: () => order, removed, store };
+  }
+
+  const ORDERED_CAPABILITIES = [
+    'measure_temperature',
+    'measure_temperature.outdoor',
+    EXHAUST_TEMP_CAPABILITY,
+    'measure_temperature.extract',
+    'measure_temperature.supply',
+    DEHUMIDIFICATION_ACTIVE_CAPABILITY,
+    FREE_COOLING_ACTIVE_CAPABILITY,
+    RESET_FILTER_CAPABILITY,
+    'measure_fan_setpoint_percent',
+    'measure_fan_setpoint_percent.extract',
+    'ventilation_stopped',
+    'measure_humidity',
+    'deicing_active',
+  ];
+
+  it('rebuilds every capability in manifest order when a later capability sits out of place', async () => {
+    const device = new DeviceClass();
+    const outOfOrder = ORDERED_CAPABILITIES.filter((capability) => capability !== 'measure_temperature.supply');
+    outOfOrder.splice(outOfOrder.indexOf('deicing_active'), 0, 'measure_temperature.supply');
+    const list = useCapabilityList(device, outOfOrder, ORDERED_CAPABILITIES);
+
+    await device.onInit();
+
+    expect(list.order()).toEqual(ORDERED_CAPABILITIES);
+    expect(list.removed.length).toBe(ORDERED_CAPABILITIES.length);
+    expect(list.store.capabilityOrderAttempt).toBe(ORDERED_CAPABILITIES.join(','));
+    expect(findStructuredLog(device.log, 'device.capability.order.rebuild')?.wanted).toEqual(ORDERED_CAPABILITIES);
+
+    const removedBefore = list.removed.length;
+    await device.onInit();
+    expect(list.removed.length).toBe(removedBefore);
+  });
+
+  it('leaves capabilities alone when the order already matches the manifest', async () => {
+    const device = new DeviceClass();
+    const list = useCapabilityList(device, ORDERED_CAPABILITIES, ORDERED_CAPABILITIES);
+
+    await device.onInit();
+
+    expect(list.removed).toEqual([]);
+    expect(device.addCapability.called).toBe(false);
+    expect(list.store.capabilityOrderAttempt).toBe(undefined);
+  });
+
+  it('does not repeat a capability order rebuild that did not take', async () => {
+    const device = new DeviceClass();
+    const outOfOrder = [...ORDERED_CAPABILITIES].reverse();
+    const list = useCapabilityList(device, outOfOrder, ORDERED_CAPABILITIES);
+    // Simulates a Homey that ignores the re-add order.
+    device.getCapabilities = () => [...outOfOrder];
+
+    await device.onInit();
+    const removedAfterFirstStart = list.removed.length;
+    await device.onInit();
+
+    expect(removedAfterFirstStart).toBe(ORDERED_CAPABILITIES.length);
+    expect(list.removed.length).toBe(removedAfterFirstStart);
+    expect(findStructuredLog(device.log, 'device.capability.order.skipped')).not.toBe(undefined);
+  });
+
+  it('retries the capability order rebuild on the next start when a capability fails to re-add', async () => {
+    const device = new DeviceClass();
+    const outOfOrder = [...ORDERED_CAPABILITIES].reverse();
+    const list = useCapabilityList(device, outOfOrder, ORDERED_CAPABILITIES);
+    const addCapability = device.addCapability;
+    device.addCapability = sinon.stub().callsFake(async (capability: string) => {
+      if (capability === 'measure_humidity') throw new Error('add failed');
+      return addCapability(capability);
+    });
+
+    await device.onInit();
+
+    expect(list.store.capabilityOrderAttempt).toBe(undefined);
+    const failureLog = findStructuredLog(device.error, 'device.capability.order.add.failed');
+    expect(failureLog?.capability).toBe('measure_humidity');
+  });
+
   it('registers capability listeners and forwards updates to registry', async () => {
     const device = new DeviceClass();
     device.hasCapability.withArgs(EXHAUST_TEMP_CAPABILITY).returns(true);

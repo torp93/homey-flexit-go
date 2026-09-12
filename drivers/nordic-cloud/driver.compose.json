@@ -11,17 +11,14 @@
   "capabilities": [
     "measure_temperature",
     "measure_temperature.outdoor",
-    "measure_temperature.supply",
     "measure_temperature.exhaust",
     "measure_temperature.extract",
     "target_temperature",
-    "measure_humidity",
+    "measure_temperature.supply",
     "dehumidification_active",
     "free_cooling_active",
-    "deicing_active",
     "measure_power",
     "fan_mode",
-    "ventilation_stopped",
     "measure_motor_rpm",
     "measure_motor_rpm.extract",
     "measure_fan_speed_percent",
@@ -29,7 +26,10 @@
     "measure_fan_setpoint_percent",
     "measure_fan_setpoint_percent.extract",
     "measure_hepa_filter",
-    "button.reset_filter"
+    "button.reset_filter",
+    "ventilation_stopped",
+    "measure_humidity",
+    "deicing_active"
   ],
   "capabilitiesOptions": {
     "measure_humidity": {
