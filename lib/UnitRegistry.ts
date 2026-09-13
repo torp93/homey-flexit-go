@@ -3384,8 +3384,24 @@ export class UnitRegistry {
         [ALARM_ACTIVE_CAPABILITY, activeAlarms === undefined ? undefined : activeAlarms.length > 0],
       ];
 
+      // While free cooling runs, the unit parks the present supply air target at its maximum
+      // (32 °C) to keep the heat exchanger off. Nobody chose that target, so the tile shows no
+      // value instead of a number that looks like the unit is trying to heat.
+      const supplyAirTarget = {
+        dataKey: 'supply_air_setpoint_present',
+        capability: 'measure_supply_air_setpoint_present',
+      };
+      const mappedData = freeCoolingActive
+        ? Object.fromEntries(Object.entries(data).filter(([key]) => key !== supplyAirTarget.dataKey))
+        : data;
       for (const device of unit.devices) {
-        this.applyMappedCapabilities(device, data);
+        this.applyMappedCapabilities(device, mappedData);
+        if (freeCoolingActive) {
+          this.logDetachedPromiseError(
+            device.setCapabilityValue(supplyAirTarget.capability, null),
+            () => `[UnitRegistry] Failed to clear '${supplyAirTarget.capability}' for ${device.getData().unitId}:`,
+          );
+        }
         this.applyCurrentTargetTemperatureCapability(device, data, temperatureMode);
         this.applyCurrentFanSetpointCapabilities(unit, device, data, setpointMode);
         this.syncDeviceSettings(device, data);

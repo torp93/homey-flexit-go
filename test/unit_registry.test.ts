@@ -1975,6 +1975,22 @@ describe('UnitRegistry', () => {
     expect(mockDevice.setCapabilityValue.calledWith('measure_humidity', sinon.match.any)).to.equal(false);
   });
 
+  it('shows no supply air target while free cooling parks it at its maximum', () => {
+    const mockDevice = makeMockDevice();
+    registry.register('test_unit', mockDevice);
+
+    const unit = { unitId: 'test_unit', devices: new Set([mockDevice]) };
+    (registry as any).distributeData(unit, {
+      free_cooling_actual_mode: 10,
+      supply_air_setpoint_present: 32,
+      heat_exchanger_percent: 0,
+    });
+
+    expect(mockDevice.setCapabilityValue.calledWith('measure_supply_air_setpoint_present', null)).to.equal(true);
+    expect(mockDevice.setCapabilityValue.calledWith('measure_supply_air_setpoint_present', 32)).to.equal(false);
+    expect(mockDevice.setCapabilityValue.calledWith('measure_heat_exchanger_percent', 0)).to.equal(true);
+  });
+
   it('mirrors boolean states as 0/1 capabilities for Insights', () => {
     const mockDevice = makeMockDevice();
     registry.register('test_unit', mockDevice);
