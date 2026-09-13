@@ -246,6 +246,7 @@ export abstract class FlexitNordicBaseDevice extends Homey.Device {
       // Reject an invalid dT start/stop pair before anything is written to the unit.
       this.validateFreeCoolingDtSettings(newSettings, effectiveChangedKeys);
       this.validateUnitSettingOrder(newSettings, effectiveChangedKeys);
+      this.validateFanProfileOrder(newSettings, changedFanModes);
 
       const { unitId } = this.getData();
       await this.maybeHandleFilterIntervalSetting(
@@ -323,6 +324,30 @@ export abstract class FlexitNordicBaseDevice extends Homey.Device {
         },
       );
       throw new Error(`Failed to update ${mode} target temperature on the unit.`);
+    }
+  }
+
+  /**
+   * The unit only accepts away <= home <= high for each fan. A change that breaks that order is
+   * rejected here with a clear message instead of being refused or clamped by the unit.
+   */
+  private validateFanProfileOrder(newSettings: Record<string, unknown>, changedFanModes: FanProfileMode[]) {
+    if (!changedFanModes.some((mode) => mode === 'away' || mode === 'home' || mode === 'high')) return;
+    const value = (mode: 'away' | 'home' | 'high', fan: 'supply' | 'exhaust') => {
+      const key = FAN_PROFILE_SETTING_KEYS[mode][fan];
+      const raw = newSettings[key] ?? this.getSetting(key);
+      return raw === null || raw === undefined || raw === '' ? NaN : Number(raw);
+    };
+    for (const fan of ['supply', 'exhaust'] as const) {
+      const away = value('away', fan);
+      const home = value('home', fan);
+      const high = value('high', fan);
+      if (Number.isFinite(away) && Number.isFinite(home) && home < away) {
+        throw new Error(`Home ${fan} fan (${home} %) cannot be lower than away (${away} %).`);
+      }
+      if (Number.isFinite(home) && Number.isFinite(high) && high < home) {
+        throw new Error(`High ${fan} fan (${high} %) cannot be lower than home (${home} %).`);
+      }
     }
   }
 
